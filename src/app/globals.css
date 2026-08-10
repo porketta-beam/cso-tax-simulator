@@ -2,129 +2,371 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Pretendard 는 layout.tsx 의 <link> 로 로드한다. CSS @import 로 걸면
+   Tailwind 가 인라인한 규칙 뒤에 놓여 "@import must precede all rules"
+   경고가 나고, 스타일시트 파싱이 끝난 뒤에야 폰트를 받으러 간다.
+   ⚠️ 임시 서체다. 클라이언트 지정 서체가 나오면 layout.tsx 의 링크와
+   아래 --font-sans 두 곳만 교체하면 된다. */
+
+/* 다크 모드는 디자인 시스템 1단계 범위 밖이다 (CTveiw readme Caveat 4).
+   variant 는 남겨 두되 `.dark` 를 정의하지 않아 shadcn 의 dark: 유틸은 비활성 상태다.
+   도입할 때 아래 :root 의 semantic alias 만 재정의하면 된다. */
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   디자인 토큰 — CTveiw/tokens/*.css 원본과 1:1 대응
+
+   여기 정의된 CSS 변수가 단일 출처다. 값을 바꾸려면 이 블록만 고친다.
+   Tailwind 유틸리티 표면은 아래 @theme 에서 따로 정의한다.
+   ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* ── fonts ───────────────────────────────────────────────────────── */
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  /* 금액·숫자 전용. 서체는 같지만 의미를 분리해 두면 나중에 숫자만
+     다른 서체로 교체할 때 한 줄만 고치면 된다. */
+  --font-num: var(--font-sans);
+  --numeric-tabular: tabular-nums;
+
+  /* ── Neutral ramp — 살짝 푸른 기가 도는 쿨그레이 ──────────────────── */
+  --gray-0: #ffffff;
+  --gray-50: #f5f7fa;
+  --gray-100: #ebeff5;
+  --gray-200: #dae1ea;
+  --gray-300: #bfc9d6;
+  --gray-400: #94a2b3;
+  --gray-500: #6b7a8c;
+  --gray-600: #4e5c6e;
+  --gray-700: #3a4757;
+  --gray-800: #26313f;
+  --gray-900: #0d1b2a; /* ink navy — 텍스트 최강조 & 히어로 배경 */
+
+  /* ── Action blue — 버튼·링크 전용. 금액에 쓰지 말 것 ──────────────── */
+  --blue-50: #ebf2fe;
+  --blue-100: #d6e4fd;
+  --blue-200: #afc9fb;
+  --blue-500: #3b7dea;
+  --blue-600: #2b6be4;
+  --blue-700: #1d53be;
+  --blue-900: #12356f;
+
+  /* ── Cash mint — 남는 돈 · 공제 가능 · 긍정 ───────────────────────── */
+  --mint-50: #e6f7f1;
+  --mint-100: #c4eddf;
+  --mint-500: #10b98c;
+  --mint-600: #00a97f;
+  --mint-700: #018463;
+  --mint-900: #04503e;
+
+  /* ── Reserve amber — 미리 빼둘 돈 · 주의 ──────────────────────────── */
+  --amber-50: #fef4e7;
+  --amber-100: #fbe3c2;
+  --amber-500: #f1961f;
+  --amber-600: #e8871e;
+  --amber-700: #b26410;
+  --amber-900: #6b3b06;
+
+  /* ── Alert red — 불공제 · 오류 · 저장 손실 위험 ───────────────────── */
+  --red-50: #fdecee;
+  --red-100: #fad3d8;
+  --red-500: #e34551;
+  --red-600: #dc2f3c;
+  --red-700: #b01f2a;
+  --red-900: #6b1119;
+
+  /* ── Semantic · text ──────────────────────────────────────────────── */
+  --text-strong: var(--gray-900);
+  --text-default: var(--gray-700);
+  --text-secondary: var(--gray-500);
+  --text-faint: var(--gray-400);
+  --text-on-color: var(--gray-0);
+  --text-link: var(--blue-600);
+
+  /* ── Semantic · surface ───────────────────────────────────────────── */
+  --surface-app: var(--gray-50);
+  --surface-card: var(--gray-0);
+  --surface-sunken: var(--gray-100);
+  --surface-ink: var(--gray-900); /* Net Cash 히어로 카드 */
+
+  /* ── Semantic · border ────────────────────────────────────────────── */
+  --border-subtle: var(--gray-200);
+  --border-default: var(--gray-300);
+  --border-strong: var(--gray-400);
+
+  /* ── Semantic · action ────────────────────────────────────────────── */
+  --action-primary: var(--blue-600);
+  --action-primary-press: var(--blue-700);
+  --action-on-primary: var(--gray-0);
+  --action-soft-bg: var(--blue-50);
+  --focus-ring: var(--blue-600);
+
+  /* ── Money semantics — 이 시스템의 핵심 ────────────────────────────
+     금액 텍스트는 반드시 아래 중 하나를 쓴다. 임의 색 금지. */
+  --money-net: var(--mint-600); /* Net Cash · 내게 남는 돈 */
+  --money-in: var(--gray-900); /* 유입(매출) — 중립·사실 */
+  --money-out: var(--gray-600); /* 유출(비용) — 중립·사실 */
+  --money-tax: var(--gray-800); /* 세금 — 부정색을 쓰지 않는다 */
+  --money-reserve: var(--amber-700); /* 적립 권장 */
+
+  /* ── Status tones ─────────────────────────────────────────────────── */
+  --ok-fg: var(--mint-700);
+  --ok-bg: var(--mint-50);
+  --ok-border: var(--mint-100);
+
+  --warn-fg: var(--amber-700);
+  --warn-bg: var(--amber-50);
+  --warn-border: var(--amber-100);
+
+  --danger-fg: var(--red-600);
+  --danger-bg: var(--red-50);
+  --danger-border: var(--red-100);
+
+  /* ── Elevation — 네이비가 섞인 확산 그림자 ────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.06), 0 2px 8px rgba(13, 27, 42, 0.05);
+  --shadow-md: 0 2px 6px rgba(13, 27, 42, 0.08), 0 8px 20px rgba(13, 27, 42, 0.07);
+  --shadow-lg: 0 8px 24px rgba(13, 27, 42, 0.1), 0 20px 48px rgba(13, 27, 42, 0.1);
+  /* Net Cash 히어로 전용 — 민트 기가 도는 발광. 결과 화면 한 곳에서만 쓴다. */
+  --shadow-net: 0 12px 32px rgba(0, 169, 127, 0.2);
+
+  /* ── Motion — 조용하게. 스프링·바운스 없음 ────────────────────────── */
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  --dur-count: 900ms; /* Net Cash 카운트업 — 유일한 예외 */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── shadcn/ui alias — 프리미티브가 디자인 시스템을 상속하도록 매핑 ── */
+  --background: var(--surface-app);
+  --foreground: var(--text-default);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-default);
+  --popover: var(--surface-card);
+  --popover-foreground: var(--text-default);
+  --primary: var(--action-primary);
+  --primary-foreground: var(--action-on-primary);
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--text-strong);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--action-soft-bg);
+  --accent-foreground: var(--blue-700);
+  --destructive: var(--danger-fg);
+  --border: var(--border-subtle);
+  --input: var(--border-subtle);
+  --ring: var(--focus-ring);
+  --radius: 16px; /* = --radius-card */
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-count: 0ms;
+  }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Tailwind 유틸리티 표면
+
+   ⚠️ 원시 램프(mint-600, amber-50 …)는 일부러 유틸리티로 노출하지 않는다.
+   디자인 시스템이 "임의 색 금지 · 금액은 role 로만"을 강제하기 때문에,
+   색을 고를 수 있게 두면 규칙이 무너진다. 의미 토큰만 열어 둔다.
+     금액   → text-money-net / -in / -out / -tax / -reserve
+     표면   → bg-surface-card / -app / -sunken / -ink
+     글자   → text-fg-strong / -default / -secondary / -faint / -on-color
+     선     → border-line-subtle / -default / -strong
+     상태   → bg-ok-bg  text-ok-fg  border-ok-line (warn/danger 동일)
+   램프 값이 정말 필요하면 bg-[var(--mint-500)] 로 명시적으로 쓴다.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  /* ── Font families ────────────────────────────────────────────────── */
+  --font-sans: var(--font-sans);
+  --font-num: var(--font-num);
+
+  /* ── Ink ramp — 히어로 카드·상태바 등 표면 조립에 필요 ─────────────── */
+  --color-ink-0: var(--gray-0);
+  --color-ink-50: var(--gray-50);
+  --color-ink-100: var(--gray-100);
+  --color-ink-200: var(--gray-200);
+  --color-ink-300: var(--gray-300);
+  --color-ink-400: var(--gray-400);
+  --color-ink-500: var(--gray-500);
+  --color-ink-600: var(--gray-600);
+  --color-ink-700: var(--gray-700);
+  --color-ink-800: var(--gray-800);
+  --color-ink-900: var(--gray-900);
+
+  /* ── Money — 이 시스템에서 금액 색은 이 다섯 개가 전부다 ───────────── */
+  --color-money-net: var(--money-net);
+  --color-money-in: var(--money-in);
+  --color-money-out: var(--money-out);
+  --color-money-tax: var(--money-tax);
+  --color-money-reserve: var(--money-reserve);
+
+  /* ── Foreground ───────────────────────────────────────────────────── */
+  --color-fg-strong: var(--text-strong);
+  --color-fg-default: var(--text-default);
+  --color-fg-secondary: var(--text-secondary);
+  --color-fg-faint: var(--text-faint);
+  --color-fg-on-color: var(--text-on-color);
+  --color-fg-link: var(--text-link);
+
+  /* ── Surface ──────────────────────────────────────────────────────── */
+  --color-surface-app: var(--surface-app);
+  --color-surface-card: var(--surface-card);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-ink: var(--surface-ink);
+
+  /* ── Line ─────────────────────────────────────────────────────────── */
+  --color-line-subtle: var(--border-subtle);
+  --color-line-default: var(--border-default);
+  --color-line-strong: var(--border-strong);
+
+  /* ── Action ───────────────────────────────────────────────────────── */
+  --color-action: var(--action-primary);
+  --color-action-press: var(--action-primary-press);
+  --color-action-fg: var(--action-on-primary);
+  --color-action-soft: var(--action-soft-bg);
+
+  /* ── Status ───────────────────────────────────────────────────────── */
+  --color-ok-fg: var(--ok-fg);
+  --color-ok-bg: var(--ok-bg);
+  --color-ok-line: var(--ok-border);
+  --color-warn-fg: var(--warn-fg);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-line: var(--warn-border);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-line: var(--danger-border);
+
+  /* ── 본문 스케일 — 접근성 하한 15px. 40~50대 사용자 비중이 높다 ────── */
+  --text-micro: 11px; /* 배지 안 글자 */
+  --text-caption: 13px; /* 보조 설명, 각주 */
+  --text-sm: 14px; /* 라벨 */
+  --text-body: 15px; /* 본문 하한 */
+  --text-lg: 17px; /* 강조 본문, 버튼 */
+  --text-h3: 19px; /* 카드 제목 */
+  --text-h2: 22px; /* 섹션 제목 */
+  --text-h1: 28px; /* 화면 제목 */
+  --text-display: 34px;
+
+  /* ── 금액 스케일 — 금액은 본문보다 항상 크고 굵다 ──────────────────── */
+  --text-num-sm: 16px; /* 표 안 금액 */
+  --text-num-md: 19px; /* 카드 소계 */
+  --text-num-lg: 26px; /* 화면별 핵심 금액 */
+  --text-num-hero: 42px; /* Net Cash — 제품 전체에서 가장 큰 글자 */
+
+  /* ── Weight ───────────────────────────────────────────────────────── */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semi: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 800;
+
+  /* ── Line height ──────────────────────────────────────────────────── */
+  --leading-tight: 1.15; /* 큰 금액 */
+  --leading-snug: 1.35; /* 제목 */
+  --leading-body: 1.6; /* 본문 — 한국어는 넉넉하게 */
+
+  /* ── Letter spacing ───────────────────────────────────────────────── */
+  --tracking-tight: -0.02em; /* 큰 금액·display 에만 */
+  --tracking-normal: 0; /* 한국어 본문은 0 */
+  --tracking-wide: 0.04em; /* 대문자 라벨 */
+
+  /* ── Spacing — 4px 베이스 그리드. p-1=4px … p-5=20px(gutter) ───────── */
+  --spacing: 4px;
+  --spacing-card: 18px; /* 카드 내부 여백 — 4px 그리드 예외 */
+  --spacing-gutter: 20px; /* 화면 좌우 여백 */
+  --spacing-cta-bar: 76px;
+  --spacing-content-bottom: 96px;
+  /* 탭 타깃 — 44px 아래로 내리지 않는다 */
+  --spacing-tap-min: 44px;
+  --spacing-tap-comfort: 52px;
+  --spacing-tap-large: 58px; /* 화면 주 CTA */
+  --spacing-tap-field: 54px; /* 금액 입력 필드 */
+
+  /* ── Radius — 카드 16px 기준 ──────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px; /* 히어로 카드 */
+  --radius-xl: 16px; /* = 기본 카드. shadcn Card 가 rounded-xl 을 쓴다 */
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+
+  /* ── Elevation ────────────────────────────────────────────────────── */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-net: var(--shadow-net);
+
+  /* ── Motion ───────────────────────────────────────────────────────── */
+  --ease-standard: var(--ease-standard);
+  --ease-out: var(--ease-out);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Base — CTveiw/tokens/base.css 포팅
+   ═══════════════════════════════════════════════════════════════════════ */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-line-subtle;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
-    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-surface-app text-fg-default font-sans;
+    font-size: var(--text-body);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--leading-body);
+    letter-spacing: var(--tracking-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  figure {
+    margin: 0;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 키보드 접근성 — 포커스 링은 항상 보이게. 마우스 클릭에는 뜨지 않음. */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+}
+
+@layer components {
+  /* 금액을 쓰는 곳이면 어디든 이 클래스. 자릿수가 바뀌어도 숫자 폭이
+     고정되어 표에서 세로 정렬이 무너지지 않는다. */
+  .num {
+    font-family: var(--font-num);
+    font-variant-numeric: var(--numeric-tabular);
+  }
+
+  /* 노치 대응 — 하단 고정 CTA 를 쓰는 화면에서 사용 */
+  .safe-bottom {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 }
