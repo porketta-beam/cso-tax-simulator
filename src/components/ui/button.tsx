@@ -1,67 +1,89 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "radix-ui"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "radix-ui";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
+/**
+ * Button — 조작 프리미티브 (CTveiw core/Button 포팅)
+ *
+ * shadcn 이 생성한 파일을 디자인 시스템 어휘로 재정의했다. shadcn 은
+ * "복사해서 소유하는" 모델이므로 이 파일은 우리 코드다. 다만
+ * `shadcn add button` 을 다시 돌리면 덮어써지니 주의.
+ *
+ * 세무 제품이라 버튼은 조용하다. 강조는 크기와 대비로만 만들고 색은 블루
+ * 하나만 쓴다. 금액 색(민트·앰버)을 버튼에 쓰지 말 것 — 그 색들은 "돈의
+ * 성격"을 뜻하므로 조작에 쓰면 의미가 무너진다.
+ *
+ * 화면 주 CTA 는 `size="xl" fullWidth` 가 기본이다.
+ */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  [
+    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
+    "border border-transparent font-bold select-none",
+    "transition-[filter,transform,background-color] duration-[var(--dur-fast)] ease-standard",
+    // 누를 때 살짝 눌리는 정도만. 스프링·바운스 없음.
+    "active:scale-[0.98]",
+    "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+    "disabled:pointer-events-none disabled:opacity-40",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0",
+  ],
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
-        destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+        primary: "bg-action text-action-fg hover:brightness-95 active:bg-action-press",
+        secondary: "bg-ink-100 text-fg-strong hover:brightness-95",
+        outline: "border-line-default bg-surface-card text-fg-strong hover:bg-surface-sunken",
+        ghost: "bg-transparent text-fg-link hover:bg-action-soft",
+        ink: "bg-ink-900 text-fg-on-color hover:brightness-125",
       },
       size: {
-        default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-8",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+        sm: "h-[38px] rounded-sm px-3.5 text-sm [&_svg]:size-4",
+        md: "h-tap-min rounded-sm px-[18px] text-body [&_svg]:size-[18px]",
+        lg: "h-tap-comfort rounded-md px-[22px] text-lg [&_svg]:size-5",
+        xl: "h-tap-large rounded-md px-[26px] text-lg [&_svg]:size-[22px]",
+        /* 아이콘 전용 — 시트 닫기처럼 라벨을 붙일 수 없는 자리에만 쓴다.
+           디자인 시스템의 탭 타깃 하한 44px 을 지키려면 `icon` 을 쓸 것.
+           `icon-sm` 은 시트/다이얼로그 모서리처럼 오조작 위험이 낮고 다른
+           조작과 겹치지 않는 자리에 한해 허용한다. */
+        icon: "size-tap-min rounded-sm [&_svg]:size-5",
+        "icon-sm": "size-9 rounded-sm [&_svg]:size-4",
+      },
+      fullWidth: {
+        true: "w-full",
+        false: "w-auto",
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "primary",
+      size: "lg",
+      fullWidth: false,
     },
-  }
-)
+  },
+);
 
 function Button({
   className,
-  variant = "default",
-  size = "default",
+  variant,
+  size,
+  fullWidth,
   asChild = false,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
+    asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  const Comp = asChild ? Slot.Root : "button";
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, fullWidth, className }))}
       {...props}
     />
-  )
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };
