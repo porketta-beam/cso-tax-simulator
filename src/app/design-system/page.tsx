@@ -54,7 +54,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid gap-3">
+    <section className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <div>
         <h2 className="text-h2 font-black tracking-tight text-fg-strong">{title}</h2>
         {desc && (
@@ -75,7 +75,7 @@ export default function DesignSystemGallery() {
   const supply = Math.floor(Number(amount || 0) / 1.1);
 
   return (
-    <main className="mx-auto grid max-w-md gap-8 px-gutter py-8">
+    <main className="mx-auto grid max-w-md grid-cols-[minmax(0,1fr)] gap-8 px-gutter py-8">
       <header>
         <Badge tone="blue">기준일 {TAX_RATES_EFFECTIVE_DATE}</Badge>
         <h1 className="mt-3 text-h1 leading-snug font-black tracking-tight text-fg-strong">

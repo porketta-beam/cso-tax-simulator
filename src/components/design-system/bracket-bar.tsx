@@ -45,7 +45,7 @@ export function BracketBar({
     <div className={cn("w-full", className)} {...rest}>
       <div
         ref={scrollRef}
-        className="flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {brackets.map((b, i) => {
           const active = i === activeIndex;

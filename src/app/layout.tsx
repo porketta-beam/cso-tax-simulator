@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { SimulatorProvider } from "@/state/simulator-context";
 
 export const metadata: Metadata = {
   title: "CSO 세무 시뮬레이터",
@@ -31,7 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
         />
       </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {/* 위저드 상태는 화면 이동 사이에 유지돼야 하므로 레이아웃에 둔다 */}
+        <SimulatorProvider>{children}</SimulatorProvider>
+      </body>
     </html>
   );
 }
