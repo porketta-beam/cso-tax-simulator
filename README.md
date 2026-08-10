@@ -39,16 +39,50 @@ npm run lint
 
 ```
 src/
-  app/                 App Router 라우트 (화면당 1개)
+  app/
+    page.tsx           S-00 시작          /
+    revenue/           S-01 매출·증빙     /revenue
+    payroll/           S-02 인건비·고정비 /payroll
+    ledger/            S-03 지출 명세     /ledger
+    tax-base/          S-04 과세표준      /tax-base
+    rates/             S-05 세율·4대보험  /rates
+    result/            S-06 Net Cash      /result
+    basis/             S-07 계산 기준     /basis
+    backup/            S-08 백업·복원     /backup
+    design-system/     컴포넌트 갤러리    /design-system
   components/
-    ui/                shadcn 프리미티브 (생성물, 직접 수정 주의)
-    design-system/     CTveiw 디자인 시스템 포팅 컴포넌트
+    ui/                shadcn 프리미티브 — 복사해서 소유하는 코드다.
+                       button·card·badge 는 디자인 시스템 어휘로 재정의했으므로
+                       `shadcn add` 를 다시 돌리면 덮어써진다
+    design-system/     CTveiw 포팅 컴포넌트 15종 + 배럴(index.ts)
+    screens/           화면 공통 셸(헤더·스크롤 본문·하단 고정 CTA)
   config/
     tax-rates.ts       ⚠️ 모든 세율·요율의 단일 출처 (PRD §4 원칙)
   lib/
     tax/               계산 파이프라인 (STAGE 02 → 03 → 04)
-  state/               Context + reducer
+  state/               Context + reducer, 명세 집계, 백업 직렬화
 ```
+
+### 컴포넌트 사용 규칙
+
+화면 코드는 `@/components/design-system` 배럴에서만 import 한다. shadcn 프리미티브를
+화면에서 직접 쓰면 디자인 시스템이 강제하는 규칙(금액은 `role` 로만, 카드는 elevation
+으로 구분)을 우회하게 된다.
+
+`globals.css` 에 디자인 토큰을 추가하면 **`src/lib/utils.ts` 의 tailwind-merge 설정도
+같이 고칠 것.** 빠뜨리면 `text-money-net` 같은 색이 같은 접두사의 크기 유틸리티에
+덮여 조용히 사라진다 — 빌드도 타입체크도 통과하고 화면만 틀린다.
+
+## 아직 없는 것
+
+1단계 범위 안에서도 다음 마일스톤으로 미뤄 둔 것들이다.
+
+| 항목 | 현재 상태 |
+|---|---|
+| 자동 저장 (IndexedDB) | 없음. 새로고침하면 입력이 사라진다. S-08 의 파일 내보내기/불러오기는 동작한다 |
+| PWA (manifest·Service Worker) | 없음. 오프라인 동작과 홈 화면 설치 불가 |
+| 저장 환경 감지 (PRD §7.3) | 배너는 `ios-tab` 고정. 실제 감지 로직 없음 |
+| 태블릿 2열·데스크톱 사이드바 (PRD §6.1) | 모바일 우선 + 데스크톱 가운데 정렬까지만 |
 
 ### 단일 출처 원칙
 
