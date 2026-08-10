@@ -1,0 +1,40 @@
+name: CI
+
+# GitHub Flow — main 은 항상 배포 가능한 상태를 유지한다. PR 이 이 검사를
+# 통과해야 머지할 수 있게 두면 그 약속이 규칙이 아니라 게이트가 된다.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: 타입 검사
+        run: npm run typecheck
+
+      - name: 린트
+        run: npm run lint
+
+      # PRD §5 검증 벡터가 여기서 회귀를 잡는다. 세율을 고치면
+      # 이 잡이 먼저 빨개져야 한다.
+      - name: 테스트
+        run: npm test
+
+      - name: 빌드
+        run: npm run build
