@@ -16,6 +16,7 @@ import {
   ScreenShell,
   SectionLabel,
 } from "@/components/screens/screen-shell";
+import { EXPERT_CONTACT } from "@/config/contact";
 import { formatPercent } from "@/lib/tax/money";
 import { useSimulator } from "@/state/simulator-context";
 
@@ -80,6 +81,22 @@ export default function ResultScreen() {
 
       <NavCard href="/basis" icon="landmark" label="계산 기준 보기" />
       <NavCard href="/backup" icon="download" label="백업과 복원" />
+
+      <Card>
+        <h3 className="mb-1 text-h3 font-bold text-fg-strong">세무사에게 물어보기</h3>
+        <p className="mb-3.5 text-caption leading-normal text-fg-secondary">
+          리스크가 걱정되거나 신고를 맡기고 싶다면 CSO 전문 세무사에게 연락하세요.
+        </p>
+        {EXPERT_CONTACT.href ? (
+          <Button variant="primary" size="lg" fullWidth asChild>
+            <a href={EXPERT_CONTACT.href}>{EXPERT_CONTACT.name}에게 연락하기</a>
+          </Button>
+        ) : (
+          <Button variant="primary" size="lg" fullWidth disabled>
+            연락처 등록 예정
+          </Button>
+        )}
+      </Card>
 
       <LegalNotice />
     </ScreenShell>

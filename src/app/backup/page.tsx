@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { Button, Card, Icon, StorageBanner } from "@/components/design-system";
 import { ScreenShell, SectionLabel } from "@/components/screens/screen-shell";
+import { buildCsv } from "@/lib/export-csv";
 import { useSimulator } from "@/state/simulator-context";
 import { parseBackupPayload, toBackupPayload } from "@/state/simulator-reducer";
 
@@ -24,25 +25,24 @@ function timestamp(now: Date): string {
 }
 
 export default function BackupScreen() {
-  const { state, dispatch, periodLabel } = useSimulator();
+  const { state, dispatch, periodLabel, simulation, ledgerTotals } = useSimulator();
   const [status, setStatus] = React.useState<Status>(null);
   const [lastFile, setLastFile] = React.useState<string | null>(null);
   const [pasted, setPasted] = React.useState("");
   const fileRef = React.useRef<HTMLInputElement>(null);
 
-  function buildFile() {
-    const now = new Date();
-    const payload = toBackupPayload(state, now.toISOString());
+  function fileName(ext: string) {
     const slug = periodLabel.replace(/[^0-9A-Za-z가-힣]/g, "");
-    return {
-      name: `CSO-TAX_${slug}_${timestamp(now)}.json`,
-      body: JSON.stringify(payload, null, 2),
-    };
+    return `CSO-TAX_${slug}_${timestamp(new Date())}.${ext}`;
   }
 
-  function download() {
-    const { name, body } = buildFile();
-    const url = URL.createObjectURL(new Blob([body], { type: "application/json" }));
+  function buildFile() {
+    const payload = toBackupPayload(state, new Date().toISOString());
+    return { name: fileName("json"), body: JSON.stringify(payload, null, 2) };
+  }
+
+  function saveBlob(name: string, body: string, type: string) {
+    const url = URL.createObjectURL(new Blob([body], { type }));
     const a = document.createElement("a");
     a.href = url;
     a.download = name;
@@ -50,6 +50,15 @@ export default function BackupScreen() {
     URL.revokeObjectURL(url);
     setLastFile(name);
     setStatus({ tone: "ok", message: `${name} 을 저장했습니다.` });
+  }
+
+  function download() {
+    const { name, body } = buildFile();
+    saveBlob(name, body, "application/json");
+  }
+
+  function downloadCsv() {
+    saveBlob(fileName("csv"), buildCsv(state, simulation, ledgerTotals), "text/csv;charset=utf-8");
   }
 
   async function copy() {
@@ -104,6 +113,10 @@ export default function BackupScreen() {
           <Button variant="primary" size="lg" fullWidth onClick={download}>
             <Icon name="download" />
             파일로 저장
+          </Button>
+          <Button variant="outline" size="lg" fullWidth onClick={downloadCsv}>
+            <Icon name="file-text" />
+            엑셀용 CSV로 저장
           </Button>
           <Button variant="outline" size="lg" fullWidth onClick={copy}>
             <Icon name="clipboard-copy" />
