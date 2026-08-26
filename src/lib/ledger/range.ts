@@ -58,6 +58,14 @@ function monthsRange(year: number, fromMonth: number, toMonth: number): DateRang
   };
 }
 
+/**
+ * `Date` → YYYY-MM-DD. **로컬 날짜**로 찍는다 — `toISOString()` 을 쓰면
+ * 자정 근처에서 하루가 어긋나 "오늘까지"가 어제까지가 된다.
+ */
+export function isoDate(date: Date): string {
+  return ymd(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
 /** 프리셋 칩 → 범위. `today` 는 사용자가 보는 로컬 날짜다 */
 export function presetRange(preset: RangePreset, today: Date): DateRange {
   const year = today.getFullYear();

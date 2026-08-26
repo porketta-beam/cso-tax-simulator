@@ -47,13 +47,14 @@ src/
     page.tsx                H0 홈(대시보드)     /
     tax/layout.tsx          T0 세무 셸 — 장부|결과 세그먼트
     tax/page.tsx            → /tax/ledger 로 보냄
-    tax/ledger/             T1 장부 목록        /tax/ledger        (구현 중)
-    tax/ledger/new/         T1-a 추가 폼        /tax/ledger/new    (구현 중)
-    tax/ledger/[id]/        T1-a 수정 폼        /tax/ledger/[id]   (구현 중)
-    tax/result/             T2 결과·기간 선택   /tax/result        (구현 중)
-    tax/settings/           T2-1 설정           /tax/settings      (구현 중)
-    shop/                   P1 쇼핑(목업)       /shop              (구현 중)
-    advisor/                A1 세무사 추천(목업) /advisor          (구현 중)
+    tax/ledger/             T1 장부 목록        /tax/ledger
+    tax/ledger/new/         T1-a 추가 폼        /tax/ledger/new
+    tax/ledger/[id]/        T1-a 수정 폼        /tax/ledger/[id]
+    tax/result/             T2 결과·기간 선택   /tax/result
+    tax/settings/           T2-1 계산 설정      /tax/settings
+    settings/               S1 앱 설정          /settings
+    shop/                   P1 쇼핑(목업)       /shop
+    advisor/                A1 세무사 추천(목업) /advisor
     account/                내 정보·탈퇴        /account
     login/                  로그인              /login
     signup/                 회원가입            /signup
@@ -67,6 +68,7 @@ src/
                        auth-gate.tsx  로그인 가드
   config/
     tax-rates.ts       ⚠️ 모든 세율·요율의 단일 출처 (PRD §4 원칙)
+    mock-catalog.ts    쇼핑·세무사 목업 — 실데이터로 갈 때 이 파일만 교체한다
   lib/
     tax/               계산 파이프라인 (STAGE 02 → 03 → 04)
   state/
@@ -74,6 +76,14 @@ src/
 supabase/
   migrations/          DB 스키마의 단일 출처
 ```
+
+### 설정이 두 개인 이유
+
+**계산 설정**(`/tax/settings`)은 결과 숫자를 바꾸는 값들이다 — 사업자 유형·국민연금
+상한·원천징수율·부양가족 수. 결과 화면 ⚙ 와 내 정보에서 들어간다. **앱 설정**
+(`/settings`)은 계산과 무관한 앱 자체의 값들이다 — 비밀번호 변경·알림·장부 전체
+내보내기·앱 정보. ☰ 메뉴에서만 들어간다. 둘을 합치면 한 화면에서 "설정을 바꿨더니
+세금이 달라졌다"와 "안 달라졌다"가 동시에 일어난다.
 
 ### 컴포넌트 사용 규칙
 
@@ -153,9 +163,9 @@ JSON 백업/복원은 v2 에서 없앴다. 엑셀(.xlsx) 내보내기는 결과 
 
 | 항목 | 현재 상태 |
 |---|---|
-| T1 장부 · T2 결과 · T2-1 설정 | 라우트 골격만. 화면은 구현 중 |
-| P1 쇼핑 · A1 세무사 추천 | 목업 데이터도 아직. 구현 중 |
-| 엑셀(.xlsx) 내보내기 | v1 코드는 폐기한 상태에 묶여 있어 지웠다. T2 에서 장부 행 기준으로 다시 만든다 |
+| P1 쇼핑 · A1 세무사 추천 | 화면은 있으나 상품·세무사는 목업(`config/mock-catalog.ts`)이다. 결제도 예약도 없다 |
+| 신고 기한 알림 | 앱 설정에 자리만 있고 저장되지 않는다 ("준비 중") |
+| 이용약관 · 개인정보 처리방침 | 문서를 아직 쓰지 않았다. 앱 설정에 행만 있다 |
 | PWA (manifest·Service Worker) | 없음. 오프라인 동작과 홈 화면 설치 불가 |
 | 태블릿 2열·데스크톱 사이드바 (PRD §6.1) | 모바일 우선 + 데스크톱 가운데 정렬까지만 |
 

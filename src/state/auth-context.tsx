@@ -26,6 +26,8 @@ interface AuthContextValue {
   signUp(email: string, password: string): Promise<void>;
   signInWithOAuth(provider: OAuthProvider): Promise<void>;
   signOut(): Promise<void>;
+  /** 비밀번호 변경 (S1 앱 설정). 이메일로 가입한 계정에서만 의미가 있다 */
+  updatePassword(password: string): Promise<void>;
   /** 탈퇴 — 하드 삭제가 아니라 profiles.deactivated_at 기록 후 로그아웃 */
   deactivate(): Promise<void>;
 }
@@ -94,6 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       async signOut() {
         const { error } = await requireClient().auth.signOut();
+        if (error) throw error;
+      },
+
+      async updatePassword(password) {
+        const { error } = await requireClient().auth.updateUser({ password });
         if (error) throw error;
       },
 

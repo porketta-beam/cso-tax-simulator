@@ -179,10 +179,12 @@ export function MenuSheet({
 
         <div className="grid pb-2">
           <MenuItem href="/account" icon="user" label="내 정보" onNavigate={onOpenChange} />
+          {/* 계산 설정(/tax/settings)이 아니라 앱 설정이다. 계산에 쓰는 값은
+              결과 화면 ⚙ 와 내 정보에서 들어간다 */}
           <MenuItem
-            href="/tax/settings"
+            href="/settings"
             icon="settings"
-            label="설정"
+            label="앱 설정"
             onNavigate={onOpenChange}
           />
           <MenuItem icon="log-out" label="로그아웃" onClick={onSignOut} />
