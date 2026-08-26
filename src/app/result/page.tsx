@@ -24,7 +24,7 @@ import { useSimulator } from "@/state/simulator-context";
 export default function ResultScreen() {
   const { simulation, periodLabel } = useSimulator();
   const { revenueVat, vatPayable, expenses, insurance, taxBase } = simulation.stage02;
-  const { totalIncomeTax, isAnnualized } = simulation.stage03;
+  const { totalIncomeTax, isAnnualized, taxKind } = simulation.stage03;
   const { netCash, marginRate, inflow, reserveItems, reserveTotal } = simulation.stage04;
 
   return (
@@ -69,7 +69,11 @@ export default function ResultScreen() {
         <BreakdownRow label="필요경비" value={-expenses.total} role="out" />
         <BreakdownRow label="과세표준" value={taxBase} role="tax" />
         <BreakdownRow label="납부 VAT" value={vatPayable} role="tax" />
-        <BreakdownRow label="납부 소득세" value={totalIncomeTax} role="tax" />
+        <BreakdownRow
+          label={taxKind === "corporate" ? "납부 법인세" : "납부 소득세"}
+          value={totalIncomeTax}
+          role="tax"
+        />
         <BreakdownRow label="4대보험 회사부담" value={insurance.total} role="tax" />
         <BreakdownRow
           label="총 세금·보험"

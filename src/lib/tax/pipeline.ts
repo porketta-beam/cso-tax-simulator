@@ -20,6 +20,7 @@
 import {
   DEFAULT_TAX_RATES,
   ANNUALIZATION_FACTOR,
+  bracketsFor,
   type IncomeTaxBracket,
   type TaxRates,
 } from "@/config/tax-rates";
@@ -149,6 +150,8 @@ export function findBracket(
  *
  * 분기 금액에 연간 누진세율표를 그대로 적용하면 구간이 과소 적용되어 세금이
  * 크게 과소평가된다. 목업의 가장 중대한 오류였다.
+ *
+ * 법인은 세율표만 갈아 끼운다 — 연환산·정수 연산·지방소득세 10% 는 동일하다.
  */
 export function runStage03(
   prev: Stage02TaxBase,
@@ -158,7 +161,9 @@ export function runStage03(
   const taxableBase = atLeastZero(prev.taxBase);
   const annualizedTaxBase = won(taxableBase * factor);
 
-  const { bracket, index } = findBracket(annualizedTaxBase, rates.incomeTaxBrackets);
+  const isCorporate = prev.input.businessType === "corporate";
+  const brackets = bracketsFor(prev.input.businessType, rates);
+  const { bracket, index } = findBracket(annualizedTaxBase, brackets);
 
   const annualIncomeTax = atLeastZero(
     applyRate(annualizedTaxBase, bracket.rate) - bracket.progressiveDeduction,
@@ -175,6 +180,8 @@ export function runStage03(
     prev,
     annualizationFactor: factor,
     annualizedTaxBase,
+    taxKind: isCorporate ? "corporate" : "income",
+    brackets,
     bracket,
     bracketIndex: index,
     annualIncomeTax,
@@ -223,7 +230,13 @@ export function runStage04(prev: Stage03Rates): Stage04NetCash {
   // PRD §4.6 — 신고 시점에 미리 빼둘 돈
   const reserveItems = [
     { label: "납부 VAT · 예정 신고", amount: atLeastZero(s02.vatPayable) },
-    { label: "소득세 + 지방소득세", amount: prev.totalIncomeTax },
+    {
+      label:
+        prev.taxKind === "corporate"
+          ? "법인세 + 지방소득세"
+          : "소득세 + 지방소득세",
+      amount: prev.totalIncomeTax,
+    },
     { label: "4대보험 회사 부담", amount: s02.insurance.total },
   ];
 

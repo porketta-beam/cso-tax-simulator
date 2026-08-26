@@ -6,7 +6,7 @@ import {
   ScreenShell,
   SectionLabel,
 } from "@/components/screens/screen-shell";
-import { DEFAULT_TAX_RATES, INCOME_TAX_BRACKETS } from "@/config/tax-rates";
+import { DEFAULT_TAX_RATES } from "@/config/tax-rates";
 import { formatKRW } from "@/lib/tax/money";
 import { cn } from "@/lib/utils";
 import { useSimulator } from "@/state/simulator-context";
@@ -19,7 +19,8 @@ import { useSimulator } from "@/state/simulator-context";
  */
 export default function BasisScreen() {
   const { simulation } = useSimulator();
-  const activeIndex = simulation.stage03.bracketIndex;
+  const { bracketIndex: activeIndex, brackets, taxKind } = simulation.stage03;
+  const isCorporate = taxKind === "corporate";
   const ins = DEFAULT_TAX_RATES.insurance;
 
   const insuranceRows: [string, string][] = [
@@ -46,14 +47,16 @@ export default function BasisScreen() {
         </div>
       </Card>
 
-      <SectionLabel>종합소득세 · 8구간</SectionLabel>
+      <SectionLabel>
+        {isCorporate ? "법인세 · 4구간" : "종합소득세 · 8구간"}
+      </SectionLabel>
       <Card padded={false} className="overflow-hidden">
         <div className="flex bg-surface-sunken px-card py-2.5 text-micro font-black tracking-wide text-fg-faint">
           <span className="flex-1">과세표준 이하</span>
           <span className="w-12 text-right">세율</span>
           <span className="w-21 text-right">누진공제</span>
         </div>
-        {INCOME_TAX_BRACKETS.map((b, i) => (
+        {brackets.map((b, i) => (
           <div
             key={b.label}
             className={cn(
@@ -67,7 +70,10 @@ export default function BasisScreen() {
                 i === activeIndex && "font-bold",
               )}
             >
-              {Number.isFinite(b.upTo) ? formatKRW(b.upTo) : "10억 초과"}
+              {/* 최상단 구간은 상한이 없다 — 라벨의 "↑" 를 "초과" 로 편다 */}
+              {Number.isFinite(b.upTo)
+                ? formatKRW(b.upTo)
+                : `${b.label.replace("↑", "")} 초과`}
             </span>
             <span
               className={cn(
@@ -108,14 +114,37 @@ export default function BasisScreen() {
         ))}
       </Card>
 
+      {isCorporate && (
+        <Card tone="sunken" elevation="none">
+          <p className="text-caption leading-normal text-fg-secondary">
+            법인세는 1차 버전입니다. 과세표준에 4구간 세율표(2026 사업연도 개정 반영)와
+            지방소득세 10% 만 적용하며, 성실신고확인·최저한세·이월결손금·세액공제 등
+            법인 고유의 세부 규정은 아직 반영하지 않았습니다. 대표 급여는 정규직 급여
+            칸에 넣으면 필요경비와 4대보험 회사부담에 함께 잡힙니다.
+          </p>
+        </Card>
+      )}
+
       <SectionLabel>반영하지 않은 것</SectionLabel>
       <Card tone="sunken" elevation="none">
         <ul className="grid gap-1.5 text-caption leading-normal text-fg-secondary">
-          <li>· 소득공제(인적공제·연금보험료 등)와 세액공제·감면</li>
-          <li>· 중간예납·기납부세액</li>
-          <li>· 국민연금 기준소득월액 상한 (고소득 정규직에서 과대계상 가능)</li>
-          <li>· 성실신고확인대상·간이과세자 구분</li>
-          <li>· 실제 신고 시 적용되는 세액 10원 미만 절사</li>
+          {isCorporate ? (
+            <>
+              <li>· 최저한세·이월결손금·비과세소득</li>
+              <li>· 세액공제·감면(연구인력개발비·통합투자세액공제 등)</li>
+              <li>· 중간예납·기납부세액</li>
+              <li>· 국민연금 기준소득월액 상한 (고소득 정규직에서 과대계상 가능)</li>
+              <li>· 실제 신고 시 적용되는 세액 10원 미만 절사</li>
+            </>
+          ) : (
+            <>
+              <li>· 소득공제(인적공제·연금보험료 등)와 세액공제·감면</li>
+              <li>· 중간예납·기납부세액</li>
+              <li>· 국민연금 기준소득월액 상한 (고소득 정규직에서 과대계상 가능)</li>
+              <li>· 성실신고확인대상·간이과세자 구분</li>
+              <li>· 실제 신고 시 적용되는 세액 10원 미만 절사</li>
+            </>
+          )}
         </ul>
       </Card>
 

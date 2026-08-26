@@ -1,4 +1,4 @@
-import type { IncomeTaxBracket, PeriodMode } from "@/config/tax-rates";
+import type { BusinessType, IncomeTaxBracket, PeriodMode } from "@/config/tax-rates";
 
 /**
  * STAGE 01 — 사용자 입력 (PRD §4.2)
@@ -6,6 +6,11 @@ import type { IncomeTaxBracket, PeriodMode } from "@/config/tax-rates";
  * 목업의 ①②③④ 넘버링과 대응한다. 금액은 모두 정수 원.
  */
 export interface TaxInput {
+  /**
+   * 세율표를 결정한다 — 개인이면 종합소득세 8구간, 법인이면 법인세 4구간.
+   * 없으면 `individual`. 나머지 계산(VAT·4대보험·원천징수·필요경비)은 동일하다.
+   */
+  businessType?: BusinessType;
   /** 연환산 계수를 결정한다 (PRD §4.3) */
   periodMode: PeriodMode;
   /** 화면 표기용 — "2026 Q2" */
@@ -91,6 +96,14 @@ export interface Stage03Rates {
   annualizationFactor: number;
   /** 연환산 과세표준 = 기간 과세표준 × 계수 */
   annualizedTaxBase: number;
+  /**
+   * 어느 세율표로 계산했는가. 화면이 businessType 을 다시 읽어 표를 고르면
+   * 엔진이 쓴 표와 어긋날 수 있으므로 결과가 직접 들고 나른다.
+   * 필드 이름(`annualIncomeTax` 등)은 법인일 때도 그대로다 — 호출부가 너무 많다.
+   */
+  taxKind: "income" | "corporate";
+  /** 적용에 쓴 누진 구간 전체. 화면의 구간바가 이 배열을 그린다 */
+  brackets: readonly IncomeTaxBracket[];
   /** 적용된 누진 구간 */
   bracket: IncomeTaxBracket;
   bracketIndex: number;

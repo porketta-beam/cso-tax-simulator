@@ -96,7 +96,9 @@ export default function TaxBaseScreen() {
         </p>
         <Money value={taxBase} role="net" size="lg" />
         <p className="mt-2.5 text-caption leading-normal text-ink-400">
-          소득공제(인적공제·연금보험료 등)는 반영되지 않았습니다.
+          {simulation.stage03.taxKind === "corporate"
+            ? "이월결손금·비과세·세액공제는 반영되지 않았습니다."
+            : "소득공제(인적공제·연금보험료 등)는 반영되지 않았습니다."}
         </p>
       </Card>
     </ScreenShell>

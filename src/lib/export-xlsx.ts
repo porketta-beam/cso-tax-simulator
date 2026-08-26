@@ -41,8 +41,10 @@ export function buildWorkbook(
   const { amounts, ledger } = state;
   const { revenueVat, purchaseVat, vatPayable, expenses, insurance, taxBase } =
     simulation.stage02;
-  const { periodIncomeTax, localIncomeTax, totalIncomeTax, withholding } =
+  const { periodIncomeTax, localIncomeTax, totalIncomeTax, withholding, taxKind } =
     simulation.stage03;
+  // 법인이면 같은 줄의 이름만 바뀐다 — 값의 의미와 자리는 그대로다
+  const taxWord = taxKind === "corporate" ? "법인세" : "소득세";
   const { inflow, netCash, marginRate, reserveTotal } = simulation.stage04;
 
   const input: SheetData = [
@@ -66,9 +68,9 @@ export function buildWorkbook(
     ["납부 VAT", num(vatPayable)],
     ["필요경비", num(expenses.total)],
     ["과세표준", num(taxBase)],
-    ["소득세 산출세액", num(periodIncomeTax)],
+    [`${taxWord} 산출세액`, num(periodIncomeTax)],
     ["지방소득세", num(localIncomeTax)],
-    ["납부 소득세", num(totalIncomeTax)],
+    [`납부 ${taxWord}`, num(totalIncomeTax)],
     ["4대보험 회사부담", num(insurance.total)],
     ["프리랜서 원천징수(참고)", num(withholding.amount)],
     ["총 세금·보험(적립 권장)", num(reserveTotal)],

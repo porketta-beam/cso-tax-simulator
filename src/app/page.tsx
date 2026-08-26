@@ -32,7 +32,7 @@ const PROMISE = [
   {
     icon: "calculator",
     title: "과세표준·세율",
-    desc: "현행 8구간 누진세율 + 연환산 적용",
+    desc: "개인 8구간 · 법인 4구간 누진세율 + 연환산 적용",
   },
   { icon: "wallet", title: "Net Cash", desc: "내 통장에 실제로 남는 돈" },
 ] as const;
@@ -106,12 +106,10 @@ export default function StartScreen() {
             />
           </div>
           {state.businessType === "corporate" && (
-            <Card tone="warn" elevation="none" className="mt-2.5">
-              <p className="text-caption leading-normal">
-                법인사업자 계산 로직은 준비 중입니다. 지금은 개인사업자(종합소득세) 기준으로
-                계산됩니다.
-              </p>
-            </Card>
+            <p className="mt-2.5 text-caption leading-normal text-fg-secondary">
+              법인세 4구간(10·20·22·25%)으로 계산합니다. 대표 급여는 정규직 급여 칸에
+              넣으세요.
+            </p>
           )}
         </div>
 
@@ -134,8 +132,9 @@ export default function StartScreen() {
           </div>
           {state.periodMode !== "year" && (
             <p className="mt-2.5 text-caption leading-normal text-warn-fg">
-              종합소득세는 연 단위 누진과세입니다. 입력한 금액을 연환산해 세율을 적용한
-              뒤 다시 기간분으로 나눠 보여드립니다.
+              {state.businessType === "corporate" ? "법인세" : "종합소득세"}는 연 단위
+              누진과세입니다. 입력한 금액을 연환산해 세율을 적용한 뒤 다시 기간분으로
+              나눠 보여드립니다.
             </p>
           )}
         </div>

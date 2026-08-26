@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Icon, StepIndicator } from "@/components/design-system";
-import { useSimulator } from "@/state/simulator-context";
 
 /** 5스텝 위저드의 단계 이름 (PRD §6.1 — 좌측 사이드바를 상단 한 줄로 압축) */
 export const STEPS = [
@@ -46,7 +45,6 @@ export function ScreenShell({
   secondary,
 }: ScreenShellProps) {
   const router = useRouter();
-  const { state } = useSimulator();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-surface-app">
@@ -71,15 +69,6 @@ export function ScreenShell({
           </div>
           {stepIndex != null && <StepIndicator steps={STEPS} current={stepIndex} />}
         </div>
-        {/* 법인 로직이 없는 동안 어느 화면에서도 숫자를 법인 기준으로 읽지 않도록 */}
-        {state.businessType === "corporate" && (
-          <p
-            role="status"
-            className="border-t border-warn-line bg-warn-bg px-gutter py-1.5 text-center text-caption font-bold text-warn-fg"
-          >
-            법인 로직 준비 중 · 개인사업자 기준 추정치
-          </p>
-        )}
       </header>
 
       {/* grid-cols-[minmax(0,1fr)] 은 장식이 아니다. grid 아이템의 기본
