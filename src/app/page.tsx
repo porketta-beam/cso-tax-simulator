@@ -11,6 +11,7 @@ import {
   StorageBanner,
 } from "@/components/design-system";
 import { SectionLabel } from "@/components/screens/screen-shell";
+import { useAuth } from "@/state/auth-context";
 import { useSimulator } from "@/state/simulator-context";
 import type { BusinessType } from "@/state/simulator-reducer";
 import type { PeriodMode } from "@/config/tax-rates";
@@ -38,10 +39,21 @@ const PROMISE = [
 
 export default function StartScreen() {
   const { state, dispatch } = useSimulator();
+  const { user } = useAuth();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-surface-app">
       <main className="grid flex-1 content-start gap-5 px-gutter pt-7 pb-4 grid-cols-[minmax(0,1fr)]">
+        {/* 로그인은 선택이다. 안 해도 아래 위저드는 그대로 동작한다 */}
+        <p className="-mb-2 truncate text-right text-caption">
+          <Link
+            href={user ? "/account" : "/login"}
+            className="font-bold text-fg-link underline"
+          >
+            {user ? `${user.email} · 내 계정` : "로그인"}
+          </Link>
+        </p>
+
         <div>
           <Badge tone="neutral">CSO 세무 시뮬레이터</Badge>
           <h1 className="mt-3.5 text-h1 leading-snug font-black tracking-tight text-fg-strong">

@@ -49,6 +49,9 @@ src/
     result/            S-06 Net Cash      /result
     basis/             S-07 계산 기준     /basis
     backup/            S-08 백업·복원     /backup
+    login/             로그인             /login
+    signup/            회원가입           /signup
+    account/           내 계정            /account
     design-system/     컴포넌트 갤러리    /design-system
   components/
     ui/                shadcn 프리미티브 — 복사해서 소유하는 코드다.
@@ -61,6 +64,8 @@ src/
   lib/
     tax/               계산 파이프라인 (STAGE 02 → 03 → 04)
   state/               Context + reducer, 명세 집계, 백업 직렬화
+supabase/
+  migrations/          DB 스키마의 단일 출처 (아직 push 하지 않았다)
 ```
 
 ### 컴포넌트 사용 규칙
@@ -72,6 +77,46 @@ src/
 `globals.css` 에 디자인 토큰을 추가하면 **`src/lib/utils.ts` 의 tailwind-merge 설정도
 같이 고칠 것.** 빠뜨리면 `text-money-net` 같은 색이 같은 접두사의 크기 유틸리티에
 덮여 조용히 사라진다 — 빌드도 타입체크도 통과하고 화면만 틀린다.
+
+## 인증 (M1-a)
+
+Supabase Auth 를 쓴다. **로그인은 선택**이다 — 로그인하지 않아도 시뮬레이터
+전체가 그대로 동작하고, 라우트 가드는 `/account` 하나뿐이다. 서버가 없으므로
+`@supabase/ssr` 대신 브라우저 클라이언트(`src/lib/supabase.ts`)만 쓴다.
+사용자의 세무 입력값은 여전히 기기 밖으로 나가지 않는다 — 지금 서버로 가는
+것은 로그인 자격증명뿐이고, DB 동기화는 M1-b 다.
+
+```bash
+cp .env.example .env.local   # 값은 Supabase 대시보드에서
+```
+
+| 환경변수 | 비고 |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | 공개 값 |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 공개 값. 보호는 RLS 가 한다 |
+
+값이 없으면 로그인 화면만 "설정되지 않았습니다"로 바뀌고 빌드는 그대로 된다
+(CI 에는 `.env.local` 이 없다).
+
+### Supabase 대시보드에서 켜 둬야 하는 것
+
+| 항목 | 값 |
+|---|---|
+| Authentication → URL Configuration → Site URL | 운영 도메인 |
+| Authentication → URL Configuration → Redirect URLs | `http://localhost:3000/account`, `https://<운영도메인>/account`, Vercel 프리뷰 도메인 |
+| Authentication → Providers → Email → Confirm email | **ON** (가입 직후에는 로그인되지 않는다) |
+| Authentication → Providers → Google | 켜고 client ID/secret 등록 |
+| Authentication → Providers → Kakao | 켜고 REST API 키/secret 등록 |
+
+### 스키마
+
+`supabase/migrations/*.sql` 이 단일 출처다. 적용된 마이그레이션은 고치지 않고
+새 파일을 덧붙인다. 스키마를 바꾼 뒤에는
+`supabase gen types typescript --linked > src/types/database.ts` 로 타입을 다시
+뽑는다 (현재 파일은 CLI 링크 전 임시 수기 작성본이다).
+
+탈퇴는 하드 삭제가 아니라 `profiles.deactivated_at` 기록 + 로그아웃이다.
+자료는 보존되며, 보관 기간과 파기 절차는 아직 정하지 않았다.
 
 ## 아직 없는 것
 

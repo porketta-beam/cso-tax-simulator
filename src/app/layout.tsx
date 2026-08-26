@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/state/auth-context";
 import { SimulatorProvider } from "@/state/simulator-context";
 
 export const metadata: Metadata = {
@@ -33,8 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="flex min-h-full flex-col">
-        {/* 위저드 상태는 화면 이동 사이에 유지돼야 하므로 레이아웃에 둔다 */}
-        <SimulatorProvider>{children}</SimulatorProvider>
+        {/* 위저드 상태는 화면 이동 사이에 유지돼야 하므로 레이아웃에 둔다.
+            인증은 그 바깥이다 — 로그인은 선택이고, 계산 상태와 아무 연결도 없다. */}
+        <AuthProvider>
+          <SimulatorProvider>{children}</SimulatorProvider>
+        </AuthProvider>
       </body>
     </html>
   );
