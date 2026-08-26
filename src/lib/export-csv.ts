@@ -40,6 +40,7 @@ export function buildCsv(
 
   const input: Row[] = [
     ["항목", "값"],
+    ["사업자 유형", state.businessType === "corporate" ? "법인사업자" : "개인사업자"],
     ["기간 유형", PERIOD_LABEL[state.periodMode]],
     ["CSO 판매대행 수수료 수입", amounts.revenue],
     ["적격증빙 지출", amounts.qualifiedEvidence],
