@@ -10,7 +10,8 @@
   `supabase gen types typescript --linked > src/types/database.ts`
   `src/types/database.ts` 는 이 명령의 출력 그대로다 — 손으로 고치지 않는다.
 - 원격에 적용된 마이그레이션: `20260826000001_profiles.sql`,
-  `20260826000002_simulations.sql`.
+  `20260826000002_simulations.sql`, `20260827000003_v2_ledger.sql`
+  (`ledger_lines` 추가 · `profiles` 설정 컬럼 3개 추가 · `simulations` 삭제).
 
 ## 환경변수
 

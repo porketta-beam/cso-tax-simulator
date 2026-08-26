@@ -39,76 +39,97 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
+      ledger_lines: {
         Row: {
-          business_type: string
+          amount: number
+          auto_forced: boolean
+          category: string
           created_at: string
-          deactivated_at: string | null
-          email: string | null
+          date: string
+          evidence: string | null
           id: string
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          business_type?: string
-          created_at?: string
-          deactivated_at?: string | null
-          email?: string | null
-          id: string
-          role?: string
-          updated_at?: string
-        }
-        Update: {
-          business_type?: string
-          created_at?: string
-          deactivated_at?: string | null
-          email?: string | null
-          id?: string
-          role?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      simulations: {
-        Row: {
-          created_at: string
-          id: string
-          period_mode: string
-          period_start: string
-          schema_version: number
-          state: Json
+          kind: string
+          memo: string
+          merchant: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          amount: number
+          auto_forced?: boolean
+          category: string
           created_at?: string
+          date: string
+          evidence?: string | null
           id?: string
-          period_mode: string
-          period_start: string
-          schema_version: number
-          state: Json
+          kind: string
+          memo?: string
+          merchant?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          amount?: number
+          auto_forced?: boolean
+          category?: string
           created_at?: string
+          date?: string
+          evidence?: string | null
           id?: string
-          period_mode?: string
-          period_start?: string
-          schema_version?: number
-          state?: Json
+          kind?: string
+          memo?: string
+          merchant?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "simulations_user_id_fkey"
+            foreignKeyName: "ledger_lines_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          business_type: string
+          created_at: string
+          deactivated_at: string | null
+          dependents: number
+          email: string | null
+          id: string
+          pension_cap_enabled: boolean
+          role: string
+          updated_at: string
+          withholding_rate: number
+        }
+        Insert: {
+          business_type?: string
+          created_at?: string
+          deactivated_at?: string | null
+          dependents?: number
+          email?: string | null
+          id: string
+          pension_cap_enabled?: boolean
+          role?: string
+          updated_at?: string
+          withholding_rate?: number
+        }
+        Update: {
+          business_type?: string
+          created_at?: string
+          deactivated_at?: string | null
+          dependents?: number
+          email?: string | null
+          id?: string
+          pension_cap_enabled?: boolean
+          role?: string
+          updated_at?: string
+          withholding_rate?: number
+        }
+        Relationships: []
       }
     }
     Views: {

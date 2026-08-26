@@ -215,3 +215,49 @@ export function isVatDeductible(
 ): boolean {
   return EVIDENCE_TYPES[evidence].deductible && category !== "nonDeductible";
 }
+
+/**
+ * 장부 수입 항목 (v2 §3 T1-a)
+ *
+ * 두 항목 다 매출로 집계된다 — VAT 포함 수령액이라는 점이 같기 때문이다.
+ * 나뉘어 있는 이유는 화면에서 "이 달 CSO 수수료가 얼마인가"를 사용자가
+ * 구분해 보기 위해서다.
+ */
+export const INCOME_CATEGORIES = {
+  sales: { label: "CSO 수수료 매출" },
+  otherIncome: { label: "기타 수입" },
+} as const;
+
+export type IncomeCategory = keyof typeof INCOME_CATEGORIES;
+
+/**
+ * 장부 지출 항목 (v2 §3 T1-a)
+ *
+ * v1 의 `COST_CATEGORIES` 에서 `payroll` 하나를 프리랜서/정규직으로 쪼갠
+ * 것이다. 집계 입력이 둘을 다르게 다루기 때문이다 — 정규직 급여만 4대보험
+ * 산정 기준이 되고, 프리랜서 지급액만 원천징수 표시 대상이다. v1 은 명세에
+ * 급여대장을 넣는 사용자가 없다고 보고 전부 프리랜서로 붙였는데, 장부가
+ * 주 입력 수단이 되는 v2 에서는 그 가정이 깨진다.
+ */
+export const EXPENSE_CATEGORIES = {
+  qualified: { label: "적격증빙 매입", vatDeductible: true },
+  fixed: { label: "고정비", vatDeductible: false },
+  nonDeductible: { label: "불공제", vatDeductible: false },
+  payrollFreelancer: { label: "인건비 · 프리랜서", vatDeductible: false },
+  payrollSalary: { label: "인건비 · 정규직", vatDeductible: false },
+} as const;
+
+export type ExpenseCategory = keyof typeof EXPENSE_CATEGORIES;
+
+/**
+ * 기본공제 1인당 금액 — 소득세법 §50 (본인 + 부양가족 각 150만원).
+ * **개인만** 적용한다. 법인은 기본공제라는 개념이 없다.
+ */
+export const PERSONAL_DEDUCTION_PER_PERSON = 1_500_000;
+
+/**
+ * 국민연금 기준소득월액 상한 (2025.7 ~ 2026.6 적용, 국민연금공단 고시).
+ * 설정에서 "상한 적용"을 켜면 `TaxRates.pensionMonthlyIncomeCap` 로 들어간다.
+ * 끄면 null — 급여 전액이 기준이 되어 고소득 정규직에서 과대계상된다.
+ */
+export const PENSION_MONTHLY_INCOME_CAP = 6_170_000;

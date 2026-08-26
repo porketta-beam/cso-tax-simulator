@@ -20,6 +20,7 @@
 import {
   DEFAULT_TAX_RATES,
   ANNUALIZATION_FACTOR,
+  PERSONAL_DEDUCTION_PER_PERSON,
   bracketsFor,
   type IncomeTaxBracket,
   type TaxRates,
@@ -110,6 +111,8 @@ export function runStage02(
   const fixedAndNonDeductible =
     won(atLeastZero(input.fixedCost)) + won(atLeastZero(input.nonDeductibleCost));
 
+  const personalDeduction = personalDeductionFor(input);
+
   const expenses: ExpenseBreakdown = {
     qualifiedSupply: purchaseVat.supply,
     payroll,
@@ -125,10 +128,24 @@ export function runStage02(
     vatPayable,
     insurance,
     expenses,
+    personalDeduction,
     // 과세표준은 음수가 될 수 있다(결손). 표시용으로는 그대로 두고,
-    // 세액 계산에서만 0 으로 눌러 준다.
+    // 세액 계산에서만 0 으로 눌러 준다. 기본공제는 여기서 빼지 않는다 —
+    // 연 단위 금액이라 연환산 뒤(STAGE 03)가 제자리다.
     taxBase: revenueVat.supply - expenses.total,
   };
+}
+
+/**
+ * 기본공제 = 150만 × (본인 1 + 부양가족) — 소득세법 §50 (v2 §3 T2-1)
+ *
+ * 법인은 0 이다. `dependents` 를 넘기지 않은 호출부도 0 이다 — v1 결과가
+ * 부양가족 항목이 생겼다는 이유만으로 달라지면 안 된다.
+ */
+function personalDeductionFor(input: TaxInput): number {
+  if (input.businessType === "corporate" || input.dependents === undefined) return 0;
+  const dependents = Math.max(0, Math.trunc(input.dependents));
+  return PERSONAL_DEDUCTION_PER_PERSON * (1 + dependents);
 }
 
 /** 과세표준이 속하는 누진 구간을 찾는다. brackets 는 upTo 오름차순이어야 한다. */
@@ -157,9 +174,20 @@ export function runStage03(
   prev: Stage02TaxBase,
   rates: TaxRates = DEFAULT_TAX_RATES,
 ): Stage03Rates {
-  const factor = ANNUALIZATION_FACTOR[prev.input.periodMode];
+  // v2 는 자유 범위라 계수를 직접 넘긴다. 0 이나 음수가 들어오면 기간 귀속
+  // 환산에서 0 으로 나누게 되므로 환산 없음(1)으로 떨어뜨린다.
+  const requested = prev.input.annualizationFactor;
+  const factor =
+    requested !== undefined && Number.isFinite(requested) && requested > 0
+      ? requested
+      : ANNUALIZATION_FACTOR[prev.input.periodMode];
   const taxableBase = atLeastZero(prev.taxBase);
-  const annualizedTaxBase = won(taxableBase * factor);
+  // 기본공제는 연환산 **뒤에** 뺀다. 기간 과세표준에서 먼저 빼면 계수가 그대로
+  // 곱해져 계수배만큼 과대공제된다 — 한 달치(계수 12)에 150만을 빼면 연간
+  // 1,800만을 공제한 셈이 된다.
+  const annualizedTaxBase = atLeastZero(
+    won(taxableBase * factor) - prev.personalDeduction,
+  );
 
   const isCorporate = prev.input.businessType === "corporate";
   const brackets = bracketsFor(prev.input.businessType, rates);
