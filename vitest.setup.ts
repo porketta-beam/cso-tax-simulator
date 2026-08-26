@@ -13,3 +13,23 @@ if (!("ResizeObserver" in globalThis)) {
     disconnect() {}
   };
 }
+
+/**
+ * jsdom 에는 matchMedia 도 없다. `NetCashHero` 는 모션 축소 설정을 **렌더 중에**
+ * 읽으므로(`usePrefersReducedMotion` → `useSyncExternalStore`), 없으면 Net Cash
+ * 가 들어간 화면은 렌더도 되기 전에 터진다. 항상 false(모션 허용)를 돌려준다 —
+ * 축소 설정을 검증하는 테스트는 이 스텁을 각자 덮어쓰면 된다.
+ */
+if (typeof window.matchMedia !== "function") {
+  window.matchMedia = (media: string) =>
+    ({
+      media,
+      matches: false,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
+}
