@@ -7,13 +7,15 @@ import { Button, Card } from "@/components/design-system";
 import { ScreenShell, SectionLabel } from "@/components/screens/screen-shell";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { useAuth } from "@/state/auth-context";
+import { syncStatusLabel } from "@/state/cloud-sync";
+import { useSimulator } from "@/state/simulator-context";
 
 /**
- * 내 계정 (M1-a)
+ * 내 계정 (M1-a · M1-b)
  *
  * 앱에서 유일하게 로그인을 요구하는 화면이다. 나머지 화면은 익명으로 그대로
- * 동작한다. 세무 입력값은 아직 기기에만 있으므로 여기서 보여줄 것은 계정
- * 정보뿐이다 — 데이터 동기화는 M1-b.
+ * 동작한다. 로그인한 동안에는 입력값이 계정에 저장되므로, 지금 어디에
+ * 저장돼 있는지도 여기서 밝힌다.
  */
 const PROVIDER_LABEL: Record<string, string> = {
   email: "이메일",
@@ -24,6 +26,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 export default function AccountScreen() {
   const router = useRouter();
   const { user, loading, signOut, deactivate } = useAuth();
+  const { syncStatus, lastSyncedAt } = useSimulator();
   const [confirming, setConfirming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -90,6 +93,17 @@ export default function AccountScreen() {
       >
         로그아웃
       </Button>
+
+      <SectionLabel>저장</SectionLabel>
+      <Card>
+        <p className="text-caption leading-normal text-fg-secondary">
+          입력한 내용은 내 계정에 자동 저장됩니다. 다른 기기에서 로그인하면 이어서 쓸
+          수 있습니다.
+        </p>
+        <p className="mt-2 text-caption font-bold text-fg-strong">
+          {syncStatusLabel(syncStatus, lastSyncedAt)}
+        </p>
+      </Card>
 
       <SectionLabel>탈퇴</SectionLabel>
       <Card>

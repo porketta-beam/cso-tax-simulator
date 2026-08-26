@@ -12,6 +12,7 @@ import {
 } from "@/components/design-system";
 import { SectionLabel } from "@/components/screens/screen-shell";
 import { useAuth } from "@/state/auth-context";
+import { syncStatusLabel } from "@/state/cloud-sync";
 import { useSimulator } from "@/state/simulator-context";
 import type { BusinessType } from "@/state/simulator-reducer";
 import type { PeriodMode } from "@/config/tax-rates";
@@ -38,7 +39,7 @@ const PROMISE = [
 ] as const;
 
 export default function StartScreen() {
-  const { state, dispatch } = useSimulator();
+  const { state, dispatch, syncStatus, lastSyncedAt } = useSimulator();
   const { user } = useAuth();
 
   return (
@@ -121,7 +122,8 @@ export default function StartScreen() {
               size="lg"
               value={state.periodMode}
               onChange={(mode: PeriodMode) =>
-                dispatch({ type: "SET_PERIOD_MODE", mode })
+                // 기간 키(저장 행)를 같이 옮긴다. 시계는 여기서 읽는다 — reducer 는 순수하다
+                dispatch({ type: "SET_PERIOD_MODE", mode, today: new Date() })
               }
               options={[
                 { value: "month", label: "월간" },
@@ -139,7 +141,28 @@ export default function StartScreen() {
           )}
         </div>
 
-        <StorageBanner variant="ios-tab" />
+        {/* 저장되는 곳이 로그인 여부로 갈린다 — 그 사실을 여기서 밝힌다 (M1-b) */}
+        {user ? (
+          <Card tone="ok" elevation="none">
+            <p className="text-caption leading-normal">
+              <strong>내 계정에 자동 저장됩니다.</strong> 다른 기기에서 로그인하면
+              이어서 쓸 수 있습니다.
+            </p>
+            <p className="mt-1 text-micro text-fg-faint">
+              {syncStatusLabel(syncStatus, lastSyncedAt)}
+            </p>
+          </Card>
+        ) : (
+          <div className="grid gap-2">
+            <StorageBanner variant="ios-tab" />
+            <p className="text-caption leading-normal text-fg-secondary">
+              <Link href="/login" className="font-bold text-fg-link underline">
+                로그인
+              </Link>
+              하면 기기가 바뀌어도 이어서 쓸 수 있습니다.
+            </p>
+          </div>
+        )}
       </main>
 
       <footer className="shrink-0 border-t border-line-subtle bg-surface-card px-gutter pt-3 pb-[max(22px,env(safe-area-inset-bottom))]">
@@ -150,7 +173,9 @@ export default function StartScreen() {
           </Link>
         </Button>
         <p className="mt-2.5 text-center text-micro leading-normal text-fg-faint">
-          입력한 내용은 이 기기 안에만 저장되며 외부로 전송되지 않습니다
+          {user
+            ? "입력한 내용은 내 계정에 저장되어 다른 기기에서도 이어집니다"
+            : "입력한 내용은 로그인 전까지 이 기기에만 저장됩니다"}
         </p>
       </footer>
     </div>

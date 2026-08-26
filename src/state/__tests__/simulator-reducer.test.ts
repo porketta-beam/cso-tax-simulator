@@ -33,6 +33,22 @@ describe("simulatorReducer", () => {
     expect(state.businessType).toBe("corporate");
   });
 
+  it("기간 모드를 바꾸면 저장 행을 고르는 기간 키도 따라 움직인다", () => {
+    const today = new Date(2026, 7, 26); // 2026-08-26
+    let state = simulatorReducer(INITIAL_STATE, {
+      type: "SET_PERIOD_MODE",
+      mode: "month",
+      today,
+    });
+    expect(state.periodStart).toBe("2026-08-01");
+
+    state = simulatorReducer(state, { type: "SET_PERIOD_MODE", mode: "quarter", today });
+    expect(state.periodStart).toBe("2026-07-01");
+
+    state = simulatorReducer(state, { type: "SET_PERIOD_MODE", mode: "year", today });
+    expect(state.periodStart).toBe("2026-01-01");
+  });
+
   it("금액은 음수와 소수를 받지 않는다", () => {
     let state = simulatorReducer(INITIAL_STATE, {
       type: "SET_AMOUNT",
@@ -207,14 +223,33 @@ describe("백업 파일", () => {
     ...INITIAL_STATE,
     businessType: "corporate",
     periodMode: "month",
+    periodStart: "2026-08-01",
+    updatedAt: "2026-08-10T00:00:00.000Z",
     amounts: { ...INITIAL_STATE.amounts, revenue: 50_000_000, salary: 3_000_000 },
     ledger: [line({ id: "a" })],
     useLedgerTotals: true,
   };
 
-  it("내보낸 파일을 그대로 되읽는다", () => {
+  it("내보낸 파일을 그대로 되읽는다 — 기간 키와 저장 시각까지", () => {
     const raw = JSON.stringify(toBackupPayload(filled, "2026-08-10T00:00:00.000Z"));
-    expect(parseBackupPayload(raw)).toEqual(filled);
+    const restored = parseBackupPayload(raw);
+    expect(restored).toEqual(filled);
+    expect(restored!.periodStart).toBe("2026-08-01");
+    expect(restored!.updatedAt).toBe("2026-08-10T00:00:00.000Z");
+  });
+
+  it("기간 키·저장 시각이 없는 v2 파일도 읽는다", () => {
+    const raw = JSON.stringify({
+      app: "cso-tax-simulator",
+      schemaVersion: 2,
+      state: { businessType: "corporate", periodMode: "quarter", amounts: {} },
+    });
+    // 기간 키는 파싱 시점 기준으로 채우고, 저장 시각은 epoch 이다 —
+    // 서버에 무엇이 있든 그쪽이 이겨야 하기 때문이다
+    const restored = parseBackupPayload(raw, new Date(2026, 7, 26));
+    expect(restored!.periodStart).toBe("2026-07-01");
+    expect(restored!.updatedAt).toBe(new Date(0).toISOString());
+    expect(restored!.schemaVersion).toBe(3);
   });
 
   it("남의 JSON 은 받지 않는다", () => {
