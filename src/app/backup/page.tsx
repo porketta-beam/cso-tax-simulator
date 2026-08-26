@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { Button, Card, Icon, StorageBanner } from "@/components/design-system";
 import { ScreenShell, SectionLabel } from "@/components/screens/screen-shell";
-import { buildCsv } from "@/lib/export-csv";
+import { downloadWorkbook } from "@/lib/export-xlsx";
 import { useSimulator } from "@/state/simulator-context";
 import { parseBackupPayload, toBackupPayload } from "@/state/simulator-reducer";
 
@@ -57,8 +57,11 @@ export default function BackupScreen() {
     saveBlob(name, body, "application/json");
   }
 
-  function downloadCsv() {
-    saveBlob(fileName("csv"), buildCsv(state, simulation, ledgerTotals), "text/csv;charset=utf-8");
+  async function downloadXlsx() {
+    const name = fileName("xlsx");
+    await downloadWorkbook(name, state, simulation, ledgerTotals);
+    setLastFile(name);
+    setStatus({ tone: "ok", message: `${name} 을 저장했습니다.` });
   }
 
   async function copy() {
@@ -114,9 +117,9 @@ export default function BackupScreen() {
             <Icon name="download" />
             파일로 저장
           </Button>
-          <Button variant="outline" size="lg" fullWidth onClick={downloadCsv}>
+          <Button variant="outline" size="lg" fullWidth onClick={downloadXlsx}>
             <Icon name="file-text" />
-            엑셀용 CSV로 저장
+            엑셀 파일로 저장
           </Button>
           <Button variant="outline" size="lg" fullWidth onClick={copy}>
             <Icon name="clipboard-copy" />
