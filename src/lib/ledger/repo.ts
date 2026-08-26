@@ -45,6 +45,24 @@ export async function listEntries(
   return (data ?? []).map(rowToEntry);
 }
 
+/**
+ * 한 건 조회. 수정 화면은 URL 의 id 로 바로 열릴 수 있어야 한다 — 목록을
+ * 거쳐 왔다고 가정하고 그 달 조회 결과에서 찾으면, 새로고침이나 북마크로
+ * 들어온 순간 "없는 내역"이 된다.
+ *
+ * 없으면 null. 남의 행은 RLS 가 걸러 내므로 여기서도 null 로 온다.
+ */
+export async function getEntry(sb: Client, id: string): Promise<LedgerEntry | null> {
+  const { data, error } = await sb
+    .from("ledger_lines")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? rowToEntry(data) : null;
+}
+
 export async function insertEntry(
   sb: Client,
   userId: string,
