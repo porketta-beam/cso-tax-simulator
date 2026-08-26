@@ -299,7 +299,7 @@ export default function DesignSystemGallery() {
         </Card>
       </Section>
 
-      <Section title="BracketBar" desc="8구간을 모바일에 욱여넣지 않는다. 적용 구간만 강조 + 자동 스크롤.">
+      <Section title="BracketBar" desc="8구간을 줄바꿈으로 전부 보여 주고 적용 구간만 강조한다. 가로 스크롤 없음.">
         <Card>
           <BracketBar
             brackets={INCOME_TAX_BRACKETS}

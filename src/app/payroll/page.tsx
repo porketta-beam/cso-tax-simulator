@@ -10,6 +10,7 @@ import {
   MoneyInput,
 } from "@/components/design-system";
 import {
+  LedgerLockedHint,
   PreviewStrip,
   ScreenShell,
   SectionLabel,
@@ -65,7 +66,7 @@ export default function PayrollScreen() {
               }
               hint={
                 freelancerFromLedger
-                  ? "명세의 인건비 구분 합계가 반영됐습니다"
+                  ? <LedgerLockedHint />
                   : `3.3% 원천징수 ${formatKRW(withholding.amount)} · 실지급 ${formatKRW(withholding.netPaid)}`
               }
             />
@@ -106,7 +107,7 @@ export default function PayrollScreen() {
             onChange={(value) =>
               dispatch({ type: "SET_AMOUNT", field: "fixedCost", value: Number(value) || 0 })
             }
-            hint="필요경비에 산입됩니다"
+            hint={ledgerActive ? <LedgerLockedHint /> : "필요경비에 산입됩니다"}
           />
 
           <div className="mt-4">
@@ -127,8 +128,14 @@ export default function PayrollScreen() {
                     value: Number(value) || 0,
                   })
                 }
-                hint="매입세액 공제는 안 되지만 경비 인정은 됩니다"
-                hintTone="warn"
+                hint={
+                  ledgerActive ? (
+                    <LedgerLockedHint />
+                  ) : (
+                    "매입세액 공제는 안 되지만 경비 인정은 됩니다"
+                  )
+                }
+                hintTone={ledgerActive ? "muted" : "warn"}
               />
             </div>
           </div>
