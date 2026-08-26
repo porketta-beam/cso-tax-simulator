@@ -24,6 +24,15 @@ function line(patch: Partial<LedgerLine>): LedgerLine {
 }
 
 describe("simulatorReducer", () => {
+  it("사업자 유형은 개인이 기본이고 법인으로 바꿀 수 있다", () => {
+    expect(INITIAL_STATE.businessType).toBe("individual");
+    const state = simulatorReducer(INITIAL_STATE, {
+      type: "SET_BUSINESS_TYPE",
+      businessType: "corporate",
+    });
+    expect(state.businessType).toBe("corporate");
+  });
+
   it("금액은 음수와 소수를 받지 않는다", () => {
     let state = simulatorReducer(INITIAL_STATE, {
       type: "SET_AMOUNT",
@@ -196,6 +205,7 @@ describe("명세가 계산까지 흘러간다", () => {
 describe("백업 파일", () => {
   const filled: SimulatorState = {
     ...INITIAL_STATE,
+    businessType: "corporate",
     periodMode: "month",
     amounts: { ...INITIAL_STATE.amounts, revenue: 50_000_000, salary: 3_000_000 },
     ledger: [line({ id: "a" })],
@@ -237,5 +247,22 @@ describe("백업 파일", () => {
       state: { periodMode: "decade", amounts: {} },
     });
     expect(parseBackupPayload(raw)!.periodMode).toBe("quarter");
+  });
+
+  it("사업자 유형이 없는 v1 파일은 개인사업자로 읽는다", () => {
+    const raw = JSON.stringify({
+      app: "cso-tax-simulator",
+      schemaVersion: 1,
+      state: { periodMode: "quarter", amounts: {} },
+    });
+    expect(parseBackupPayload(raw)!.businessType).toBe("individual");
+  });
+
+  it("알 수 없는 사업자 유형은 개인사업자로 떨어뜨린다", () => {
+    const raw = JSON.stringify({
+      app: "cso-tax-simulator",
+      state: { businessType: "조합", amounts: {} },
+    });
+    expect(parseBackupPayload(raw)!.businessType).toBe("individual");
   });
 });

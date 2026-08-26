@@ -12,6 +12,7 @@ import {
 } from "@/components/design-system";
 import { SectionLabel } from "@/components/screens/screen-shell";
 import { useSimulator } from "@/state/simulator-context";
+import type { BusinessType } from "@/state/simulator-reducer";
 import type { PeriodMode } from "@/config/tax-rates";
 
 /** S-00 · 시작 (PRD §6.2) */
@@ -75,6 +76,32 @@ export default function StartScreen() {
             </div>
           ))}
         </Card>
+
+        <div>
+          <SectionLabel>사업자 유형</SectionLabel>
+          <div className="mt-2">
+            <SegmentedToggle
+              label="사업자 유형"
+              size="lg"
+              value={state.businessType}
+              onChange={(businessType: BusinessType) =>
+                dispatch({ type: "SET_BUSINESS_TYPE", businessType })
+              }
+              options={[
+                { value: "individual", label: "개인사업자" },
+                { value: "corporate", label: "법인사업자" },
+              ]}
+            />
+          </div>
+          {state.businessType === "corporate" && (
+            <Card tone="warn" elevation="none" className="mt-2.5">
+              <p className="text-caption leading-normal">
+                법인사업자 계산 로직은 준비 중입니다. 지금은 개인사업자(종합소득세) 기준으로
+                계산됩니다.
+              </p>
+            </Card>
+          )}
+        </div>
 
         <div>
           <SectionLabel>입력 기간</SectionLabel>

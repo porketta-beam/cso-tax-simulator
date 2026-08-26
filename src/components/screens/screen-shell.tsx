@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Icon, StepIndicator } from "@/components/design-system";
+import { useSimulator } from "@/state/simulator-context";
 
 /** 5스텝 위저드의 단계 이름 (PRD §6.1 — 좌측 사이드바를 상단 한 줄로 압축) */
 export const STEPS = [
@@ -45,28 +46,40 @@ export function ScreenShell({
   secondary,
 }: ScreenShellProps) {
   const router = useRouter();
+  const { state } = useSimulator();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-surface-app">
-      <header className="sticky top-0 z-10 shrink-0 border-b border-line-subtle bg-surface-card px-gutter pt-1.5 pb-3.5">
-        <div className="mb-3 flex items-center gap-2">
-          {backHref && (
-            <button
-              type="button"
-              onClick={() => router.push(backHref)}
-              aria-label="이전 화면으로"
-              className={cn(
-                "-ml-1 inline-flex size-8 shrink-0 items-center justify-center rounded-sm",
-                "text-fg-strong hover:bg-surface-sunken",
-                "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-              )}
-            >
-              <Icon name="chevron-left" size={22} />
-            </button>
-          )}
-          <h1 className="text-h2 font-black tracking-tight text-fg-strong">{title}</h1>
+      <header className="sticky top-0 z-10 shrink-0 border-b border-line-subtle bg-surface-card">
+        <div className="px-gutter pt-1.5 pb-3.5">
+          <div className="mb-3 flex items-center gap-2">
+            {backHref && (
+              <button
+                type="button"
+                onClick={() => router.push(backHref)}
+                aria-label="이전 화면으로"
+                className={cn(
+                  "-ml-1 inline-flex size-8 shrink-0 items-center justify-center rounded-sm",
+                  "text-fg-strong hover:bg-surface-sunken",
+                  "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+                )}
+              >
+                <Icon name="chevron-left" size={22} />
+              </button>
+            )}
+            <h1 className="text-h2 font-black tracking-tight text-fg-strong">{title}</h1>
+          </div>
+          {stepIndex != null && <StepIndicator steps={STEPS} current={stepIndex} />}
         </div>
-        {stepIndex != null && <StepIndicator steps={STEPS} current={stepIndex} />}
+        {/* 법인 로직이 없는 동안 어느 화면에서도 숫자를 법인 기준으로 읽지 않도록 */}
+        {state.businessType === "corporate" && (
+          <p
+            role="status"
+            className="border-t border-warn-line bg-warn-bg px-gutter py-1.5 text-center text-caption font-bold text-warn-fg"
+          >
+            법인 로직 준비 중 · 개인사업자 기준 추정치
+          </p>
+        )}
       </header>
 
       {/* grid-cols-[minmax(0,1fr)] 은 장식이 아니다. grid 아이템의 기본
@@ -133,7 +146,8 @@ export function LegalNotice() {
     <p className="px-2 py-1 text-center text-micro leading-body text-fg-faint">
       본 계산 결과는 시뮬레이션 예시이며 실제 신고·세무 자문이 아닙니다. 소득공제·
       세액공제·감면·중간예납 등이 반영되지 않아 실제 납부세액과 다를 수 있습니다.
-      정확한 신고는 세무사와 협업하세요.
+      계산 기준은 이 앱이 정한 것이며, 실제 적용 여부의 판단과 책임은 사용자 본인에게
+      있습니다. 정확한 신고는 세무사와 협업하세요.
     </p>
   );
 }

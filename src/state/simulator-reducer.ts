@@ -6,7 +6,13 @@ import { sumLedger, type LedgerLine } from "./ledger";
  * 백업 파일과 저장 스키마의 버전. 필드 구조가 바뀌면 올린다.
  * 2단계 서버 도입 시 이 값이 그대로 서버 스키마 버전이 된다 (PRD §12).
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+/**
+ * 사업자 유형. 법인 계산 로직은 아직 없다 — `corporate` 를 골라도 계산은
+ * 개인사업자(종합소득세) 기준으로 돌고, 화면이 그 사실을 경고한다.
+ */
+export type BusinessType = "individual" | "corporate";
 
 /** 사용자가 직접 채우는 금액 필드 */
 export type AmountField =
@@ -19,6 +25,7 @@ export type AmountField =
 
 export interface SimulatorState {
   schemaVersion: number;
+  businessType: BusinessType;
   periodMode: PeriodMode;
   /** 사용자가 직접 입력한 금액. 명세 반영 여부와 무관하게 보존된다 */
   amounts: Record<AmountField, number>;
@@ -31,6 +38,7 @@ export interface SimulatorState {
 }
 
 export type SimulatorAction =
+  | { type: "SET_BUSINESS_TYPE"; businessType: BusinessType }
   | { type: "SET_PERIOD_MODE"; mode: PeriodMode }
   | { type: "SET_AMOUNT"; field: AmountField; value: number }
   | { type: "ADD_LEDGER_LINE"; line: LedgerLine }
@@ -42,6 +50,7 @@ export type SimulatorAction =
 
 export const INITIAL_STATE: SimulatorState = {
   schemaVersion: SCHEMA_VERSION,
+  businessType: "individual",
   periodMode: "quarter",
   amounts: {
     revenue: 0,
@@ -60,6 +69,9 @@ export function simulatorReducer(
   action: SimulatorAction,
 ): SimulatorState {
   switch (action.type) {
+    case "SET_BUSINESS_TYPE":
+      return { ...state, businessType: action.businessType };
+
     case "SET_PERIOD_MODE":
       return { ...state, periodMode: action.mode };
 
@@ -198,8 +210,13 @@ export function parseBackupPayload(raw: string): SimulatorState | null {
       ? state.periodMode
       : "quarter";
 
+  // v1 파일에는 이 필드가 없다 — 그때는 전부 개인사업자였다
+  const businessType: BusinessType =
+    state.businessType === "corporate" ? "corporate" : "individual";
+
   return {
     schemaVersion: SCHEMA_VERSION,
+    businessType,
     periodMode,
     amounts: restoredAmounts,
     ledger,
