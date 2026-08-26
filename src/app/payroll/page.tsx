@@ -73,6 +73,11 @@ export default function PayrollScreen() {
           </div>
 
           <SectionLabel>정규직 급여 · 세전</SectionLabel>
+          {state.businessType === "corporate" && (
+            <p className="mt-1 text-caption leading-normal text-fg-secondary">
+              법인은 대표 급여도 여기에 포함합니다.
+            </p>
+          )}
           <div className="mt-2">
             <MoneyInput
               aria-label="정규직 급여"

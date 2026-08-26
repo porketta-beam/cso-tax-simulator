@@ -11,7 +11,7 @@ import {
   Money,
 } from "@/components/design-system";
 import { ScreenShell, SectionLabel } from "@/components/screens/screen-shell";
-import { DEFAULT_TAX_RATES, INCOME_TAX_BRACKETS } from "@/config/tax-rates";
+import { DEFAULT_TAX_RATES } from "@/config/tax-rates";
 import { formatKRW } from "@/lib/tax/money";
 import { useSimulator } from "@/state/simulator-context";
 
@@ -24,6 +24,8 @@ export default function RatesScreen() {
   const {
     annualizationFactor,
     annualizedTaxBase,
+    taxKind,
+    brackets,
     bracket,
     bracketIndex,
     annualIncomeTax,
@@ -36,6 +38,10 @@ export default function RatesScreen() {
 
   const word = PERIOD_WORD[simulation.input.periodMode];
   const rates = DEFAULT_TAX_RATES.insurance;
+  // 세율표·명칭은 엔진이 고른 것을 그대로 쓴다. 화면이 businessType 으로 다시
+  // 고르면 강조된 구간이 실제 계산과 어긋날 수 있다.
+  const isCorporate = taxKind === "corporate";
+  const taxWord = isCorporate ? "법인세" : "소득세";
 
   return (
     <ScreenShell
@@ -56,10 +62,10 @@ export default function RatesScreen() {
         </Button>
       }
     >
-      <SectionLabel>종합소득세 누진 구간</SectionLabel>
+      <SectionLabel>{isCorporate ? "법인세" : "종합소득세"} 누진 구간</SectionLabel>
       <Card>
         <BracketBar
-          brackets={INCOME_TAX_BRACKETS}
+          brackets={brackets}
           activeIndex={bracketIndex}
           note={
             isAnnualized
@@ -98,7 +104,7 @@ export default function RatesScreen() {
           role="tax"
         />
         <BreakdownRow
-          label="납부 예상 소득세"
+          label={`납부 예상 ${taxWord}`}
           value={totalIncomeTax}
           role="tax"
           level="total"

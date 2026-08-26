@@ -66,12 +66,24 @@ export interface InsuranceRates {
   readonly industrialAccident: number;
 }
 
+/**
+ * 사업자 유형. 세율표를 고르는 유일한 기준이다.
+ *
+ * 이 타입이 state 가 아니라 config 에 있는 이유: 세율표를 고르는 것이
+ * 이 값의 유일한 쓸모인데, config 는 state 를 import 할 수 없다(단방향).
+ * `@/state/simulator-reducer` 에서 그대로 re-export 하므로 기존 import 는
+ * 그대로 동작한다.
+ */
+export type BusinessType = "individual" | "corporate";
+
 export interface TaxRates {
   readonly effectiveDate: string;
   /** 부가가치세율 */
   readonly vat: number;
   /** 종합소득세 누진 구간 — 반드시 upTo 오름차순 */
   readonly incomeTaxBrackets: readonly IncomeTaxBracket[];
+  /** 법인세 누진 구간 — 반드시 upTo 오름차순 */
+  readonly corporateTaxBrackets: readonly IncomeTaxBracket[];
   /** 지방소득세 = 산출세액 × 이 값 */
   readonly localIncomeTax: number;
   /** 4대보험 회사부담 요율 */
@@ -98,11 +110,44 @@ export const INCOME_TAX_BRACKETS: readonly IncomeTaxBracket[] = [
   { upTo: Infinity, rate: 0.45, progressiveDeduction: 65_940_000, label: "10억↑" },
 ] as const;
 
+/**
+ * 법인세 4구간 — 2026 사업연도
+ *
+ * 2025년 12월 개정으로 **2026-01-01 이후 개시하는 사업연도**부터 전 구간이
+ * +1%p 올랐다 (9/19/21/24% → 10/20/22/25%). 그 이전 사업연도를 재계산하려면
+ * 옛 표를 별도로 만들어 `TaxRates` 로 주입한다.
+ * 출처: 국세청 「법인세 세율」
+ * https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7746&mi=2372
+ *
+ * 누진공제는 개인 세율표와 같은 방식으로 뽑았다 —
+ * 직전 구간 누진공제 + 직전 구간 상한 × 세율차:
+ *     2억 × (20% − 10%) =        20,000,000
+ *   200억 × (22% − 20%) =       400,000,000 → 누적     420,000,000
+ *  3,000억 × (25% − 22%) =    9,000,000,000 → 누적   9,420,000,000
+ */
+export const CORPORATE_TAX_BRACKETS: readonly IncomeTaxBracket[] = [
+  { upTo: 200_000_000, rate: 0.1, progressiveDeduction: 0, label: "2억" },
+  { upTo: 20_000_000_000, rate: 0.2, progressiveDeduction: 20_000_000, label: "200억" },
+  {
+    upTo: 300_000_000_000,
+    rate: 0.22,
+    progressiveDeduction: 420_000_000,
+    label: "3,000억",
+  },
+  {
+    upTo: Infinity,
+    rate: 0.25,
+    progressiveDeduction: 9_420_000_000,
+    label: "3,000억↑",
+  },
+] as const;
+
 /** 기본 세율표 — 2026-01-01 기준 */
 export const DEFAULT_TAX_RATES: TaxRates = {
   effectiveDate: TAX_RATES_EFFECTIVE_DATE,
   vat: 0.1,
   incomeTaxBrackets: INCOME_TAX_BRACKETS,
+  corporateTaxBrackets: CORPORATE_TAX_BRACKETS,
   localIncomeTax: 0.1,
   insurance: {
     nationalPension: 0.045,
@@ -115,6 +160,19 @@ export const DEFAULT_TAX_RATES: TaxRates = {
   freelancerWithholding: 0.033,
   pensionMonthlyIncomeCap: null,
 };
+
+/**
+ * 사업자 유형에 맞는 누진 세율표. 엔진(STAGE 03)과 화면이 같은 함수를 쓴다.
+ * 화면이 세율표를 직접 고르면 엔진이 쓴 표와 어긋나 강조된 구간이 틀어진다.
+ */
+export function bracketsFor(
+  businessType: BusinessType | undefined,
+  rates: TaxRates = DEFAULT_TAX_RATES,
+): readonly IncomeTaxBracket[] {
+  return businessType === "corporate"
+    ? rates.corporateTaxBrackets
+    : rates.incomeTaxBrackets;
+}
 
 /**
  * 매입세액 공제가 가능한 증빙 유형 (PRD §4.1 TAX-A).
