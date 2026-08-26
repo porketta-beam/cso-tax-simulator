@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AuthGate } from "@/components/screens/auth-gate";
 import { AuthProvider } from "@/state/auth-context";
-import { SimulatorProvider } from "@/state/simulator-context";
 
 export const metadata: Metadata = {
   title: "CSO 세무 시뮬레이터",
   description:
-    "매출·증빙·인건비·고정비만 넣으면 VAT 역산부터 종합소득세, 4대보험, 신고 때 미리 빼둘 금액까지. 로그인하지 않으면 이 기기에만 저장되고, 로그인하면 내 계정에 저장되어 다른 기기에서도 이어서 씁니다.",
+    "장부처럼 수입·지출을 입력하면 VAT 역산부터 종합소득세·법인세, 4대보험, 신고 때 미리 빼둘 금액까지 계산합니다.",
   applicationName: "CSO 세무 시뮬레이터",
   robots: { index: false, follow: false },
 };
 
-/* viewportFit: "cover" — 노치 기기에서 하단 고정 CTA 가 safe-area 를 쓰려면 필요하다.
+/* viewportFit: "cover" — 노치 기기에서 하단 탭이 safe-area 를 쓰려면 필요하다.
    themeColor 는 잉크 네이비(--gray-900). */
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,10 +34,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="flex min-h-full flex-col">
-        {/* 위저드 상태는 화면 이동 사이에 유지돼야 하므로 레이아웃에 둔다.
-            인증은 그 바깥이다 — 로그인은 선택이고, 계산 상태와 아무 연결도 없다. */}
+        {/* v2 는 로그인 필수다. 세션이 확인되기 전에는 AuthGate 가 아무것도
+            내보내지 않으므로, 화면 코드는 user 가 있다고 가정해도 된다. */}
         <AuthProvider>
-          <SimulatorProvider>{children}</SimulatorProvider>
+          <AuthGate>{children}</AuthGate>
         </AuthProvider>
       </body>
     </html>

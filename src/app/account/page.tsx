@@ -1,21 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 
 import { Button, Card } from "@/components/design-system";
-import { ScreenShell, SectionLabel } from "@/components/screens/screen-shell";
+import { AppShell, SectionLabel } from "@/components/screens/app-shell";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { useAuth } from "@/state/auth-context";
-import { syncStatusLabel } from "@/state/cloud-sync";
-import { useSimulator } from "@/state/simulator-context";
 
 /**
- * 내 계정 (M1-a · M1-b)
+ * 내 정보 (☰ 메뉴 → 내 정보)
  *
- * 앱에서 유일하게 로그인을 요구하는 화면이다. 나머지 화면은 익명으로 그대로
- * 동작한다. 로그인한 동안에는 입력값이 계정에 저장되므로, 지금 어디에
- * 저장돼 있는지도 여기서 밝힌다.
+ * 탈퇴의 두 번 탭 확인이 사는 유일한 곳이다. 메뉴 시트의 "탈퇴" 도 여기로
+ * 보낸다 — 확인 흐름을 복제하면 한쪽만 고쳐질 수 있다.
+ * 로그인 여부 판단은 `AuthGate` 가 이미 했다.
  */
 const PROVIDER_LABEL: Record<string, string> = {
   email: "이메일",
@@ -24,28 +21,12 @@ const PROVIDER_LABEL: Record<string, string> = {
 };
 
 export default function AccountScreen() {
-  const router = useRouter();
-  const { user, loading, signOut, deactivate } = useAuth();
-  const { syncStatus, lastSyncedAt } = useSimulator();
+  const { user, signOut, deactivate } = useAuth();
   const [confirming, setConfirming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
 
-  React.useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [loading, user, router]);
-
-  if (!user) {
-    return (
-      <ScreenShell title="내 계정" backHref="/">
-        <Card elevation="none">
-          <p className="text-caption leading-normal text-fg-secondary">
-            로그인 상태를 확인하고 있습니다.
-          </p>
-        </Card>
-      </ScreenShell>
-    );
-  }
+  if (!user) return null;
 
   const provider = user.app_metadata?.provider ?? "email";
 
@@ -62,7 +43,7 @@ export default function AccountScreen() {
   }
 
   return (
-    <ScreenShell title="내 계정" backHref="/">
+    <AppShell title="내 정보" back="/">
       {error && (
         <Card tone="danger" elevation="none" role="status">
           <p className="text-caption leading-normal">{error}</p>
@@ -93,17 +74,6 @@ export default function AccountScreen() {
       >
         로그아웃
       </Button>
-
-      <SectionLabel>저장</SectionLabel>
-      <Card>
-        <p className="text-caption leading-normal text-fg-secondary">
-          입력한 내용은 내 계정에 자동 저장됩니다. 다른 기기에서 로그인하면 이어서 쓸
-          수 있습니다.
-        </p>
-        <p className="mt-2 text-caption font-bold text-fg-strong">
-          {syncStatusLabel(syncStatus, lastSyncedAt)}
-        </p>
-      </Card>
 
       <SectionLabel>탈퇴</SectionLabel>
       <Card>
@@ -148,6 +118,6 @@ export default function AccountScreen() {
           </Button>
         )}
       </Card>
-    </ScreenShell>
+    </AppShell>
   );
 }
