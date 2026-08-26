@@ -83,8 +83,8 @@ export function ScreenShell({
       </header>
 
       {/* grid-cols-[minmax(0,1fr)] 은 장식이 아니다. grid 아이템의 기본
-          min-width 는 auto(=min-content) 라, 카드 안에 가로 스크롤 칩(BracketBar)
-          처럼 줄바꿈 안 되는 요소가 있으면 열 너비가 그만큼 밀려 화면 전체가
+          min-width 는 auto(=min-content) 라, 카드 안에 가로 스크롤 영역처럼
+          줄바꿈 안 되는 요소가 있으면 열 너비가 그만큼 밀려 화면 전체가
           가로로 넘친다. 그러면 오른쪽 정렬된 금액이 화면 밖으로 잘려 나간다. */}
       <main className="grid flex-1 content-start gap-3 px-gutter py-4 grid-cols-[minmax(0,1fr)]">
         {banner}
@@ -137,6 +137,19 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
     <p className="mt-1.5 text-micro font-black tracking-wide text-fg-faint">
       {children}
     </p>
+  );
+}
+
+/** 명세 집계로 잠긴 입력 칸의 hint — 잠긴 이유와 푸는 길을 같이 적는다 */
+export function LedgerLockedHint() {
+  return (
+    <>
+      지출 명세에서 집계된 값입니다. 바꾸려면{" "}
+      <Link href="/ledger" className="font-bold text-fg-link underline">
+        명세에서 수정
+      </Link>
+      하세요.
+    </>
   );
 }
 

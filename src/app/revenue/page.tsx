@@ -9,7 +9,11 @@ import {
   Icon,
   MoneyInput,
 } from "@/components/design-system";
-import { PreviewStrip, ScreenShell } from "@/components/screens/screen-shell";
+import {
+  LedgerLockedHint,
+  PreviewStrip,
+  ScreenShell,
+} from "@/components/screens/screen-shell";
 import { formatKRW } from "@/lib/tax/money";
 import { useSimulator } from "@/state/simulator-context";
 
@@ -71,7 +75,7 @@ export default function RevenueScreen() {
             }
             hint={
               ledgerActive
-                ? `지출 명세 ${ledgerTotals.count}건의 합계가 반영됐습니다`
+                ? <LedgerLockedHint />
                 : `공급가액 ${formatKRW(purchaseVat.supply)} · 매입 VAT ${formatKRW(purchaseVat.vat)} 공제`
             }
             hintTone={ledgerActive ? "muted" : "ok"}
