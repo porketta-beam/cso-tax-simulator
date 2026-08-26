@@ -5,17 +5,19 @@ import * as React from "react";
 import { Button, Card, Icon, StorageBanner } from "@/components/design-system";
 import { ScreenShell, SectionLabel } from "@/components/screens/screen-shell";
 import { downloadWorkbook } from "@/lib/export-xlsx";
+import { useAuth } from "@/state/auth-context";
 import { useSimulator } from "@/state/simulator-context";
 import { parseBackupPayload, toBackupPayload } from "@/state/simulator-reducer";
 
 /**
  * S-08 · 백업과 복원 (PRD §7)
  *
- * 서버가 없어 데이터가 기기에만 있고, iOS Safari 는 7일간 방문이 없으면
- * 저장소를 통째로 지운다. 그래서 "파일로 빼두는 길"이 기능이 아니라 안전망이다.
+ * 로그인하지 않으면 데이터가 이 기기에만 있고, iOS Safari 는 7일간 방문이
+ * 없으면 저장소를 통째로 지운다. 그래서 "파일로 빼두는 길"이 기능이 아니라
+ * 안전망이다.
  *
- * ⚠️ 자동 저장(IndexedDB) 계층은 다음 마일스톤이다. 지금은 새로고침하면
- * 입력이 사라지므로, 이 화면의 내보내기가 유일한 보존 수단이다.
+ * 자동 저장은 M1-b 에서 붙었다 — 로컬은 항상, 서버는 로그인했을 때. 그래도
+ * 파일 백업은 남긴다: 계정을 잃거나 서버가 죽어도 손에 남는 유일한 사본이다.
  */
 type Status = { tone: "ok" | "danger"; message: string } | null;
 
@@ -26,6 +28,7 @@ function timestamp(now: Date): string {
 
 export default function BackupScreen() {
   const { state, dispatch, periodLabel, simulation, ledgerTotals } = useSimulator();
+  const { user } = useAuth();
   const [status, setStatus] = React.useState<Status>(null);
   const [lastFile, setLastFile] = React.useState<string | null>(null);
   const [pasted, setPasted] = React.useState("");
@@ -99,7 +102,10 @@ export default function BackupScreen() {
 
   return (
     <ScreenShell title="백업과 복원" backHref="/result">
-      <StorageBanner variant="ios-tab" onPrimary={download} onSecondary={download} />
+      {/* 로그인하면 계정에 저장되므로 이 경고는 로그아웃 상태에서만 참이다 */}
+      {!user && (
+        <StorageBanner variant="ios-tab" onPrimary={download} onSecondary={download} />
+      )}
 
       {status && (
         <Card tone={status.tone === "ok" ? "ok" : "danger"} elevation="none">
@@ -193,10 +199,11 @@ export default function BackupScreen() {
         </p>
       </Card>
 
-      <Card tone="warn" elevation="none">
+      <Card tone={user ? "ok" : "warn"} elevation="none">
         <p className="text-caption leading-normal">
-          자동 저장은 아직 붙지 않았습니다. 지금은 새로고침하면 입력이 사라지니, 작업을
-          마치면 반드시 백업 파일을 받아 주세요.
+          {user
+            ? "입력한 내용은 내 계정에 자동 저장되어 다른 기기에서도 이어집니다. 백업 파일은 계정과 무관한 사본이 필요할 때 받아 두세요."
+            : "입력한 내용은 이 기기에만 자동 저장됩니다. 브라우저 저장소가 지워지면 함께 사라지니, 백업 파일을 받아 두거나 로그인해 주세요."}
         </p>
       </Card>
     </ScreenShell>
