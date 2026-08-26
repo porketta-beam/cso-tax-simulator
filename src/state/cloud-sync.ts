@@ -25,6 +25,17 @@ export type SyncStatus = "off" | "idle" | "saving" | "saved" | "error";
 type Client = SupabaseClient<Database>;
 
 /**
+ * ⚠️ v2 마이그레이션 0003 이 `simulations` 테이블을 지웠다 — 장부가 행 단위
+ * (`ledger_lines`)로 쪼개지면서 jsonb 스냅샷은 쓸 곳이 없어졌다. 이 파일 전체가
+ * v2 앱 셸 PR 에서 삭제되지만, 그 전까지 v1 마법사가 컴파일은 돼야 하므로
+ * 여기서만 타입 없는 클라이언트로 내려간다. 런타임에서는 이미 죽은 경로다 —
+ * 호출부가 오류를 잡아 "서버 저장에 실패했습니다"로 표시한다.
+ */
+function v1Snapshots(supabase: Client) {
+  return (supabase as unknown as SupabaseClient).from("simulations");
+}
+
+/**
  * 로컬과 서버 중 새것을 고른다. 같으면 로컬이 이긴다 — 방금 손댄 쪽을
  * 사용자가 눈으로 보고 있기 때문이다. ISO 문자열은 사전순 = 시간순이다.
  */
@@ -43,8 +54,7 @@ export async function fetchRemote(
   periodMode: string,
   periodStart: string,
 ): Promise<SimulatorState | null> {
-  const { data, error } = await supabase
-    .from("simulations")
+  const { data, error } = await v1Snapshots(supabase)
     .select("state")
     .eq("user_id", userId)
     .eq("period_mode", periodMode)
@@ -63,7 +73,7 @@ export async function pushRemote(
   state: SimulatorState,
 ): Promise<void> {
   const payload = toBackupPayload(state, state.updatedAt);
-  const { error } = await supabase.from("simulations").upsert(
+  const { error } = await v1Snapshots(supabase).upsert(
     {
       user_id: userId,
       period_mode: state.periodMode,

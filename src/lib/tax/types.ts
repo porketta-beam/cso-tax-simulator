@@ -15,6 +15,18 @@ export interface TaxInput {
   periodMode: PeriodMode;
   /** 화면 표기용 — "2026 Q2" */
   periodLabel: string;
+  /**
+   * 연환산 계수 직접 지정 (v2 §3 T2). 있으면 STAGE 03 이 `periodMode` 대신
+   * 이 값을 쓴다. v2 는 기간을 자유 범위로 고르므로 월/분기/연 세 값으로는
+   * 계수를 표현할 수 없다 — `annualizationFactor(range)` 가 만들어 넣는다.
+   */
+  annualizationFactor?: number;
+  /**
+   * 부양가족 수(본인 제외). **개인만** — 법인은 무시한다 (v2 §3 T2-1).
+   * 없으면(undefined) 기본공제를 아예 적용하지 않는다. v1 호출부는 이 값을
+   * 넘기지 않으므로 계산 결과가 그대로 유지된다.
+   */
+  dependents?: number;
 
   /** ① CSO 수수료 매출 — VAT 포함 수령액 */
   revenue: number;
@@ -77,7 +89,13 @@ export interface Stage02TaxBase {
   vatPayable: number;
   insurance: InsuranceBreakdown;
   expenses: ExpenseBreakdown;
-  /** 기간 과세표준 = 매출 공급가액 − 필요경비 합계 */
+  /**
+   * 기본공제 = 150만 × (1 + 부양가족). 법인이거나 부양가족 수를 넘기지
+   * 않았으면 0 이다. 필요경비가 아니라 과세표준에서 직접 빠지므로 명세를
+   * 따로 들고 나른다 — 화면의 근거 섹션이 이 줄을 보여 준다.
+   */
+  personalDeduction: number;
+  /** 기간 과세표준 = 매출 공급가액 − 필요경비 합계 − 기본공제 */
   taxBase: number;
 }
 
