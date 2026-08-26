@@ -4,14 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 
 import { Button, Card } from "@/components/design-system";
-import { ScreenShell } from "@/components/screens/screen-shell";
+import { AppShell } from "@/components/screens/app-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { useAuth, type OAuthProvider } from "@/state/auth-context";
 
 /**
- * 회원가입 (M1-a)
+ * 회원가입
  *
  * 프로젝트에 이메일 인증이 켜져 있으므로 가입 직후에는 로그인되지 않는다.
  * 메일의 링크를 눌러야 세션이 생긴다.
@@ -65,23 +65,20 @@ export default function SignUpScreen() {
 
   if (!configured) {
     return (
-      <ScreenShell title="회원가입" backHref="/">
+      <AppShell title="회원가입" hideTabs>
         <Card tone="warn" elevation="none">
           <p className="text-caption leading-normal">
-            로그인 기능이 아직 설정되지 않았습니다. 로그인 없이도 시뮬레이터는 그대로
-            쓸 수 있습니다.
+            로그인 기능이 아직 설정되지 않았습니다. 환경변수를 넣고 다시 배포해야
+            합니다.
           </p>
         </Card>
-        <Button variant="outline" size="lg" fullWidth asChild>
-          <Link href="/">시뮬레이터로 돌아가기</Link>
-        </Button>
-      </ScreenShell>
+      </AppShell>
     );
   }
 
   if (sent) {
     return (
-      <ScreenShell title="회원가입" backHref="/">
+      <AppShell title="회원가입" back="/login" hideTabs>
         <Card tone="ok" elevation="none" role="status">
           <p className="text-caption leading-normal">
             확인 메일을 보냈습니다. 메일의 링크를 누르면 가입이 완료됩니다.
@@ -90,12 +87,12 @@ export default function SignUpScreen() {
         <Button variant="outline" size="lg" fullWidth asChild>
           <Link href="/login">로그인 화면으로</Link>
         </Button>
-      </ScreenShell>
+      </AppShell>
     );
   }
 
   return (
-    <ScreenShell title="회원가입" backHref="/">
+    <AppShell title="회원가입" back="/login" hideTabs>
       {error && (
         <Card tone="danger" elevation="none" role="status">
           <p className="text-caption leading-normal">{error}</p>
@@ -184,6 +181,6 @@ export default function SignUpScreen() {
           로그인
         </Link>
       </p>
-    </ScreenShell>
+    </AppShell>
   );
 }

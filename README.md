@@ -1,17 +1,20 @@
 # CSO 세무 시뮬레이터 — Frontend
 
-제약 영업대행사(CSO) 1인 개인사업자를 위한 세무 시뮬레이터. 네 칸(매출·증빙·인건비·고정비)만
-채우면 VAT 역산 → 과세표준 → 누진세율·4대보험 → **Net Cash** 까지 계산하고, 신고 시점에
-미리 빼둘 **적립금**을 제안한다.
+제약 영업대행사(CSO) 1인 개인사업자를 위한 세무 시뮬레이터. 수입·지출을 **장부**에
+한 건씩 넣으면 VAT 역산 → 과세표준 → 누진세율·4대보험 → **Net Cash** 까지 계산하고,
+신고 시점에 미리 빼둘 **적립금**을 제안한다.
 
-로그인하지 않으면 입력값이 이 기기에만 저장된다. 로그인하면 내 계정에 저장되어
-다른 기기에서도 이어서 쓸 수 있다. 분석 도구는 쓰지 않는다.
+**로그인이 필요하다.** 장부는 계정에 저장되므로 기기가 바뀌어도 이어서 쓴다.
+분석 도구는 쓰지 않는다.
+
+v2 구조와 화면 정의는 `../../claudedocs/기능정의_v2.md` 가 단일 출처다.
 
 ## 근거 문서
 
 | 문서 | 역할 |
 |---|---|
-| `../../PRD.md` | 계산 로직(§4) · 검증 벡터(§5) · 화면 명세(§6) · 기술 스택(§8) |
+| `../../claudedocs/기능정의_v2.md` | v2 화면 지도 · 장부 모델 · 삭제 목록 |
+| `../../PRD.md` | 계산 로직(§4) · 검증 벡터(§5) · 기술 스택(§8) |
 | `../../CTveiw/` | 디자인 시스템 — 토큰, 컴포넌트, 9개 화면 UI 킷 |
 
 ## 스택
@@ -22,7 +25,7 @@
 | 언어 | TypeScript |
 | 스타일 | Tailwind CSS v4 (`@theme` 에 디자인 토큰 이식) |
 | UI 프리미티브 | shadcn/ui (radix) |
-| 상태 | React Context + reducer |
+| 상태 | 장부는 Supabase(서버) — 로컬 사본 없음 |
 | 테스트 | Vitest — PRD §5 검증 벡터를 회귀 기준으로 고정 |
 | 배포 | Vercel |
 
@@ -41,35 +44,35 @@ npm run lint
 ```
 src/
   app/
-    page.tsx           S-00 시작          /
-    revenue/           S-01 매출·증빙     /revenue
-    payroll/           S-02 인건비·고정비 /payroll
-    ledger/            S-03 지출 명세     /ledger
-    tax-base/          S-04 과세표준      /tax-base
-    rates/             S-05 세율·4대보험  /rates
-    result/            S-06 Net Cash      /result
-    basis/             S-07 계산 기준     /basis
-    backup/            S-08 백업·복원     /backup
-    login/             로그인             /login
-    signup/            회원가입           /signup
-    account/           내 계정            /account
-    design-system/     컴포넌트 갤러리    /design-system
+    page.tsx                H0 홈(대시보드)     /
+    tax/layout.tsx          T0 세무 셸 — 장부|결과 세그먼트
+    tax/page.tsx            → /tax/ledger 로 보냄
+    tax/ledger/             T1 장부 목록        /tax/ledger        (구현 중)
+    tax/ledger/new/         T1-a 추가 폼        /tax/ledger/new    (구현 중)
+    tax/ledger/[id]/        T1-a 수정 폼        /tax/ledger/[id]   (구현 중)
+    tax/result/             T2 결과·기간 선택   /tax/result        (구현 중)
+    tax/settings/           T2-1 설정           /tax/settings      (구현 중)
+    shop/                   P1 쇼핑(목업)       /shop              (구현 중)
+    advisor/                A1 세무사 추천(목업) /advisor          (구현 중)
+    account/                내 정보·탈퇴        /account
+    login/                  로그인              /login
+    signup/                 회원가입            /signup
+    design-system/          컴포넌트 갤러리     /design-system
   components/
     ui/                shadcn 프리미티브 — 복사해서 소유하는 코드다.
                        button·card·badge 는 디자인 시스템 어휘로 재정의했으므로
                        `shadcn add` 를 다시 돌리면 덮어써진다
     design-system/     CTveiw 포팅 컴포넌트 15종 + 배럴(index.ts)
-    screens/           화면 공통 셸(헤더·스크롤 본문·하단 고정 CTA)
+    screens/           app-shell.tsx  상단 바 + 하단 탭 4개 + ☰ 메뉴 시트
+                       auth-gate.tsx  로그인 가드
   config/
     tax-rates.ts       ⚠️ 모든 세율·요율의 단일 출처 (PRD §4 원칙)
   lib/
     tax/               계산 파이프라인 (STAGE 02 → 03 → 04)
-  state/               Context + reducer, 명세 집계, 백업 직렬화
-    period.ts          기간 키(periodStart) 계산 — 저장 행을 고른다
-    persistence.ts     로컬 저장 (localStorage)
-    cloud-sync.ts      계정별 서버 동기화 (로그인했을 때만)
+  state/
+    auth-context.tsx   Supabase 세션 보관
 supabase/
-  migrations/          DB 스키마의 단일 출처 (0001·0002 원격 적용 완료)
+  migrations/          DB 스키마의 단일 출처
 ```
 
 ### 컴포넌트 사용 규칙
@@ -82,12 +85,13 @@ supabase/
 같이 고칠 것.** 빠뜨리면 `text-money-net` 같은 색이 같은 접두사의 크기 유틸리티에
 덮여 조용히 사라진다 — 빌드도 타입체크도 통과하고 화면만 틀린다.
 
-## 인증 (M1-a)
+## 인증 — 로그인 필수
 
-Supabase Auth 를 쓴다. **로그인은 선택**이다 — 로그인하지 않아도 시뮬레이터
-전체가 그대로 동작하고, 라우트 가드는 `/account` 하나뿐이다. 서버가 없으므로
-`@supabase/ssr` 대신 브라우저 클라이언트(`src/lib/supabase.ts`)만 쓴다.
-로그인하지 않은 동안에는 세무 입력값이 기기 밖으로 나가지 않는다.
+Supabase Auth 를 쓴다. `/login`, `/signup`, `/design-system` 을 뺀 모든 라우트는
+`src/components/screens/auth-gate.tsx` 가 막고, 세션이 없으면 `/login` 으로 보낸다.
+서버 코드가 없으므로 `@supabase/ssr` 대신 브라우저 클라이언트
+(`src/lib/supabase.ts`)만 쓰고, 판단은 전부 브라우저에서 일어난다 — 세션이
+확인되기 전에는 아무것도 렌더하지 않는다(보호된 화면이 스쳐 지나가면 안 된다).
 
 ```bash
 cp .env.example .env.local   # 값은 Supabase 대시보드에서
@@ -98,15 +102,15 @@ cp .env.example .env.local   # 값은 Supabase 대시보드에서
 | `NEXT_PUBLIC_SUPABASE_URL` | 공개 값 |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 공개 값. 보호는 RLS 가 한다 |
 
-값이 없으면 로그인 화면만 "설정되지 않았습니다"로 바뀌고 빌드는 그대로 된다
-(CI 에는 `.env.local` 이 없다).
+값이 없어도 빌드는 그대로 된다(CI 에는 `.env.local` 이 없다). 이때 앱은 리다이렉트
+루프 대신 "설정되지 않은 빌드" 안내를 띄운다.
 
 ### Supabase 대시보드에서 켜 둬야 하는 것
 
 | 항목 | 값 |
 |---|---|
 | Authentication → URL Configuration → Site URL | 운영 도메인 |
-| Authentication → URL Configuration → Redirect URLs | `http://localhost:3000/account`, `https://<운영도메인>/account`, Vercel 프리뷰 도메인 |
+| Authentication → URL Configuration → Redirect URLs | `http://localhost:3000/`, `https://<운영도메인>/`, Vercel 프리뷰 도메인 |
 | Authentication → Providers → Email → Confirm email | **ON** (가입 직후에는 로그인되지 않는다) |
 | Authentication → Providers → Google | 켜고 client ID/secret 등록 |
 | Authentication → Providers → Kakao | 켜고 REST API 키/secret 등록 |
@@ -126,29 +130,22 @@ cp .env.example .env.local   # 값은 Supabase 대시보드에서
 탈퇴는 하드 삭제가 아니라 `profiles.deactivated_at` 기록 + 로그아웃이다.
 자료는 보존되며, 보관 기간과 파기 절차는 아직 정하지 않았다.
 
-## 저장·동기화 (M1-b)
+## 저장 — 서버 한 곳
 
-저장은 두 겹이고, 로그인 여부가 **어디에** 저장되는지를 가른다.
+장부는 `ledger_lines` 행으로 계정에 저장된다. **로컬 사본은 두지 않는다** —
+사본을 두는 순간 어긋난 두 값 중 어느 쪽이 맞는지 판정해야 하고, 그 판정기를
+유지할 이유가 없다. 설정(사업자 유형·국민연금 상한·원천징수율·부양가족 수)은
+`profiles` 컬럼이다. 로그아웃 상태에서는 아무것도 전송하지 않는다 —
+애초에 화면에 들어오지 못한다.
 
-| | 로컬 (`localStorage`) | 서버 (`simulations`) |
-|---|---|---|
-| 대상 | 모두 | 로그인한 사용자만 |
-| 키 | `cso-tax:state` | (`user_id`, `period_mode`, `period_start`) |
-| 시점 | 상태 변경 후 300ms | 상태 변경 후 1s |
-| 담는 것 | 백업 파일과 **같은 모양** (`toBackupPayload`) | 같은 모양을 jsonb 한 행으로 |
+| | 내용 |
+|---|---|
+| 장부 한 건 | 날짜 · 수입/지출 · 금액(정수 원, VAT 포함) · 항목 · 증빙(지출만) · 거래처 · 메모 |
+| 공제 판정 | 증빙 종류로 자동 결정한다(간이영수증·무증빙 → 불공제) |
+| 기간 | 결과 화면에서 시작일~종료일을 직접 고른다. 저장된 "기간 모드"는 없다 |
 
-- **기간 키** — `periodStart` 는 기간의 첫 달 1일(`YYYY-MM-01`)이다. 월간
-  2026-08 → `2026-08-01`, 분기 2026 Q3 → `2026-07-01`, 연간 → `2026-01-01`.
-  기간을 바꾸면 다른 행으로 옮겨 간다(이력은 기간 단위로 쌓인다).
-- **충돌** — payload 안의 `updatedAt`(클라이언트 시계)이 새로운 쪽이 이긴다.
-  같으면 로컬이 이긴다. 재시도 큐도 오프라인 큐도 없다 — 다음 변경이 다시 보낸다.
-- **로그아웃 상태에서는 아무것도 전송하지 않는다.** 분석 도구도 없다.
-- 명세(ledger)는 아직 행으로 쪼개지 않았다. SQL 로 명세 한 줄을 집계·검색해야
-  할 일이 생기면 그때 `ledger_lines` 테이블을 덧붙인다
-  (`20260826000002_simulations.sql` 의 `-- ponytail:` 주석).
-
-파일 백업(S-08)은 그대로 남는다 — 계정을 잃거나 서버가 죽어도 손에 남는
-유일한 사본이다.
+JSON 백업/복원은 v2 에서 없앴다. 엑셀(.xlsx) 내보내기는 결과 화면(T2)으로 옮겨
+다시 붙인다.
 
 ## 아직 없는 것
 
@@ -156,14 +153,15 @@ cp .env.example .env.local   # 값은 Supabase 대시보드에서
 
 | 항목 | 현재 상태 |
 |---|---|
-| 기간 선택 UI | `periodStart` 는 항상 "지금" 기준이다. 지난 기간을 골라 보는 화면은 M2 |
+| T1 장부 · T2 결과 · T2-1 설정 | 라우트 골격만. 화면은 구현 중 |
+| P1 쇼핑 · A1 세무사 추천 | 목업 데이터도 아직. 구현 중 |
+| 엑셀(.xlsx) 내보내기 | v1 코드는 폐기한 상태에 묶여 있어 지웠다. T2 에서 장부 행 기준으로 다시 만든다 |
 | PWA (manifest·Service Worker) | 없음. 오프라인 동작과 홈 화면 설치 불가 |
-| 저장 환경 감지 (PRD §7.3) | 배너는 `ios-tab` 고정. 실제 감지 로직 없음 |
 | 태블릿 2열·데스크톱 사이드바 (PRD §6.1) | 모바일 우선 + 데스크톱 가운데 정렬까지만 |
 
 ## 법인사업자
 
-시작 화면(S-00)에서 **법인사업자**를 고르면 과세표준에 종합소득세 8구간 대신 **법인세
+설정 화면(T2-1)에서 **법인사업자**를 고르면 과세표준에 종합소득세 8구간 대신 **법인세
 4구간**을 적용한다 — 2억 이하 10% · 2억~200억 20% · 200억~3,000억 22% · 3,000억 초과
 25%. 2025년 12월 개정으로 **2026-01-01 이후 개시하는 사업연도**부터 전 구간이 +1%p
 올랐고, 그 표를 쓴다([국세청 「법인세 세율」](https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7746&mi=2372)).
@@ -172,14 +170,14 @@ cp .env.example .env.local   # 값은 Supabase 대시보드에서
 급여 칸**에 넣으면 필요경비와 4대보험 회사부담에 함께 잡힌다.
 
 1차 버전이라 법인 고유의 세부 규정 — 성실신고확인, 최저한세, 이월결손금, 세액공제·
-감면, 중간예납 — 은 반영하지 않았다. 계산 기준 화면(S-07)이 법인 모드에서 이 범위를
+감면, 중간예납 — 은 반영하지 않았다. 결과 화면의 계산 근거 섹션이 법인 모드에서 이 범위를
 그대로 밝힌다.
 
 ### 단일 출처 원칙
 
 모든 세율·요율·한도는 `src/config/tax-rates.ts` 에서만 정의한다. 화면 컴포넌트와 계산
 함수 어디에서도 숫자 리터럴을 직접 쓰지 않는다. 세법이 개정되면 이 파일 한 곳만 고친다.
-계산 기준 화면(S-07)은 이 파일을 그대로 렌더링한다.
+결과 화면의 계산 근거 섹션은 이 파일을 그대로 렌더링한다.
 
 ## 브랜치 전략 — GitHub Flow
 

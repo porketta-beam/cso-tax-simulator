@@ -3,15 +3,14 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 /**
- * 브라우저 Supabase 클라이언트 (M1-a · M1-b)
+ * 브라우저 Supabase 클라이언트
  *
  * 서버 코드가 없으므로 `@supabase/ssr` 은 쓰지 않는다. 세션은 브라우저
- * 저장소에만 있다. 밖으로 나가는 것은 로그인 자격증명과, **로그인한 동안의**
- * 시뮬레이터 상태다 — 로그아웃 상태에서는 아무것도 전송하지 않는다.
- * 보호는 전적으로 RLS 가 한다 (PRD §9).
+ * 저장소에만 있고, 장부는 서버에만 있다. 보호는 전적으로 RLS 가 한다 (PRD §9).
  *
  * 환경변수가 없으면 `null` 을 돌려준다. CI 빌드에는 `.env.local` 이 없고,
- * 로그인은 선택 기능이라 나머지 앱은 그대로 동작해야 하기 때문이다.
+ * 그래도 빌드는 통과해야 하기 때문이다 — 그런 빌드에서는 `AuthGate` 가
+ * 리다이렉트 대신 설정 안내를 띄운다.
  */
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

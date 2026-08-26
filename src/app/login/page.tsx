@@ -5,16 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button, Card } from "@/components/design-system";
-import { ScreenShell } from "@/components/screens/screen-shell";
+import { AppShell } from "@/components/screens/app-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { useAuth, type OAuthProvider } from "@/state/auth-context";
 
 /**
- * 로그인 (M1-a)
+ * 로그인
  *
- * 로그인은 선택 기능이다. 이 화면을 거치지 않아도 시뮬레이터는 전부 쓸 수 있다.
+ * v2 는 로그인 필수다. `/login`·`/signup` 만 열려 있고 나머지 화면은
+ * `AuthGate` 가 여기로 돌려보낸다. 로그인에 성공하면 홈으로 간다.
  */
 const FIELD_CLASS =
   "h-tap-field rounded-md border-2 border-line-subtle bg-surface-card px-3.5 text-body text-fg-strong focus-visible:border-action focus-visible:ring-0";
@@ -34,7 +35,7 @@ export default function LoginScreen() {
     setError(null);
     try {
       await signIn(email, password);
-      router.replace("/account");
+      router.replace("/");
     } catch (err) {
       setError(authErrorMessage(err));
       setBusy(false);
@@ -54,22 +55,19 @@ export default function LoginScreen() {
 
   if (!configured) {
     return (
-      <ScreenShell title="로그인" backHref="/">
+      <AppShell title="로그인" hideTabs>
         <Card tone="warn" elevation="none">
           <p className="text-caption leading-normal">
-            로그인 기능이 아직 설정되지 않았습니다. 로그인 없이도 시뮬레이터는 그대로
-            쓸 수 있습니다.
+            로그인 기능이 아직 설정되지 않았습니다. 환경변수를 넣고 다시 배포해야
+            합니다.
           </p>
         </Card>
-        <Button variant="outline" size="lg" fullWidth asChild>
-          <Link href="/">시뮬레이터로 돌아가기</Link>
-        </Button>
-      </ScreenShell>
+      </AppShell>
     );
   }
 
   return (
-    <ScreenShell title="로그인" backHref="/">
+    <AppShell title="로그인" hideTabs>
       {error && (
         <Card tone="danger" elevation="none" role="status">
           <p className="text-caption leading-normal">{error}</p>
@@ -141,6 +139,6 @@ export default function LoginScreen() {
           회원가입
         </Link>
       </p>
-    </ScreenShell>
+    </AppShell>
   );
 }

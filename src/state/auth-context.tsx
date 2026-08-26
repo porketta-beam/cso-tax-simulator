@@ -6,12 +6,11 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabase, isAuthConfigured } from "@/lib/supabase";
 
 /**
- * 인증 상태 (M1-a)
+ * 인증 상태
  *
- * 로그인은 **선택** 기능이다. 로그인하지 않아도 시뮬레이터 전체가 그대로
- * 동작해야 하므로, 여기서 하는 일은 세션을 들고 있는 것뿐이다. 그 세션을
- * 읽어 서버 동기화를 켜고 끄는 것은 SimulatorProvider 쪽이다 (M1-b) —
- * 로그아웃 상태에서는 세무 입력값이 기기를 벗어나지 않는다.
+ * v2 는 **로그인 필수**다. 장부는 서버에만 있고 로컬 사본을 두지 않으므로,
+ * 세션이 없으면 보여줄 것이 없다. 여기서 하는 일은 세션을 들고 있는 것뿐이고,
+ * 그 세션으로 화면을 여닫는 것은 `AuthGate` 다.
  *
  * 실패는 예외로 던진다. 화면은 `authErrorMessage(err)` 한 줄로 받는다.
  */
@@ -80,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await requireClient().auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/account` },
+          options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
       },
@@ -88,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async signInWithOAuth(provider) {
         const { error } = await requireClient().auth.signInWithOAuth({
           provider,
-          options: { redirectTo: `${window.location.origin}/account` },
+          options: { redirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
       },
