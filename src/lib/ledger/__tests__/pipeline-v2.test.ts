@@ -18,32 +18,50 @@ const BASE: TaxInput = {
 };
 
 describe("기본공제 (v2 §3 T2-1)", () => {
+  /** 그 계수로 돌렸을 때의 연환산 과세표준 */
+  function annualized(input: TaxInput, factor: number): number {
+    return runStage03(runStage02({ ...input, annualizationFactor: factor })).annualizedTaxBase;
+  }
+
   it("부양가족 수를 넘기지 않으면 v1 과 결과가 같다", () => {
     const stage02 = runStage02(BASE);
     expect(stage02.personalDeduction).toBe(0);
-    expect(stage02.taxBase).toBe(
-      stage02.revenueVat.supply - stage02.expenses.total,
+    expect(stage02.taxBase).toBe(stage02.revenueVat.supply - stage02.expenses.total);
+  });
+
+  it("기간 과세표준은 부양가족과 무관하다 — 공제는 연 단위라 STAGE 03 이 뺀다", () => {
+    expect(runStage02({ ...BASE, dependents: 2 }).taxBase).toBe(runStage02(BASE).taxBase);
+  });
+
+  it("근거 표시용으로 공제액 자체는 STAGE 02 가 들고 나른다", () => {
+    expect(runStage02({ ...BASE, dependents: 2 }).personalDeduction).toBe(
+      PERSONAL_DEDUCTION_PER_PERSON * 3,
     );
   });
 
-  it("개인은 과세표준에서 150만 × (본인 + 부양가족) 을 뺀다", () => {
-    const before = runStage02(BASE).taxBase;
-    const after = runStage02({ ...BASE, dependents: 2 });
-    expect(after.personalDeduction).toBe(PERSONAL_DEDUCTION_PER_PERSON * 3);
-    expect(after.taxBase).toBe(before - PERSONAL_DEDUCTION_PER_PERSON * 3);
+  it("부양가족 0 명도 본인 몫 150만은 빠진다", () => {
+    expect(runStage02({ ...BASE, dependents: 0 }).personalDeduction).toBe(
+      PERSONAL_DEDUCTION_PER_PERSON,
+    );
   });
 
-  it("부양가족 0 명도 본인 몫 150만은 빠진다", () => {
-    const after = runStage02({ ...BASE, dependents: 0 });
-    expect(after.personalDeduction).toBe(PERSONAL_DEDUCTION_PER_PERSON);
+  it("한 달치(계수 12)든 한 해치(계수 1)든 연 150만 × (1 + 부양가족) 한 번만 빠진다", () => {
+    // 기간 과세표준에서 먼저 빼면 계수가 곱해져 한 달치에서 1,800만이 빠진다
+    for (const factor of [12, 4, 1]) {
+      for (const dependents of [0, 2, 3]) {
+        expect(annualized(BASE, factor) - annualized({ ...BASE, dependents }, factor)).toBe(
+          PERSONAL_DEDUCTION_PER_PERSON * (1 + dependents),
+        );
+      }
+    }
   });
 
   it("법인은 기본공제가 없다 — 부양가족 수를 넘겨도 무시한다", () => {
     const corporate: TaxInput = { ...BASE, businessType: "corporate" };
-    const before = runStage02(corporate).taxBase;
     const after = runStage02({ ...corporate, dependents: 3 });
     expect(after.personalDeduction).toBe(0);
-    expect(after.taxBase).toBe(before);
+    expect(after.taxBase).toBe(runStage02(corporate).taxBase);
+    expect(annualized({ ...corporate, dependents: 3 }, 12)).toBe(annualized(corporate, 12));
   });
 
   it("공제가 세액까지 흘러간다", () => {
@@ -53,6 +71,14 @@ describe("기본공제 (v2 §3 T2-1)", () => {
       plain.stage03.totalIncomeTax,
     );
   });
+
+  it("공제가 과세표준보다 커도 음수가 되지 않는다", () => {
+    const tiny: TaxInput = { ...BASE, revenue: 2_200_000, qualifiedEvidence: 0,
+      freelancerPay: 0, salary: 0, fixedCost: 0, nonDeductibleCost: 0 };
+    const stage03 = runStage03(runStage02({ ...tiny, dependents: 5, annualizationFactor: 1 }));
+    expect(stage03.annualizedTaxBase).toBe(0);
+    expect(stage03.totalIncomeTax).toBe(0);
+  });
 });
 
 describe("연환산 계수 직접 지정 (v2 §3 T2)", () => {
@@ -61,6 +87,7 @@ describe("연환산 계수 직접 지정 (v2 §3 T2)", () => {
       runStage02({ ...BASE, periodMode: "year", annualizationFactor: 4 }),
     );
     expect(stage03.annualizationFactor).toBe(4);
+    // BASE 는 부양가족을 넘기지 않아 공제가 0 이다
     expect(stage03.annualizedTaxBase).toBe(stage03.prev.taxBase * 4);
   });
 

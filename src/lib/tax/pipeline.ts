@@ -130,8 +130,9 @@ export function runStage02(
     expenses,
     personalDeduction,
     // 과세표준은 음수가 될 수 있다(결손). 표시용으로는 그대로 두고,
-    // 세액 계산에서만 0 으로 눌러 준다.
-    taxBase: revenueVat.supply - expenses.total - personalDeduction,
+    // 세액 계산에서만 0 으로 눌러 준다. 기본공제는 여기서 빼지 않는다 —
+    // 연 단위 금액이라 연환산 뒤(STAGE 03)가 제자리다.
+    taxBase: revenueVat.supply - expenses.total,
   };
 }
 
@@ -181,7 +182,12 @@ export function runStage03(
       ? requested
       : ANNUALIZATION_FACTOR[prev.input.periodMode];
   const taxableBase = atLeastZero(prev.taxBase);
-  const annualizedTaxBase = won(taxableBase * factor);
+  // 기본공제는 연환산 **뒤에** 뺀다. 기간 과세표준에서 먼저 빼면 계수가 그대로
+  // 곱해져 계수배만큼 과대공제된다 — 한 달치(계수 12)에 150만을 빼면 연간
+  // 1,800만을 공제한 셈이 된다.
+  const annualizedTaxBase = atLeastZero(
+    won(taxableBase * factor) - prev.personalDeduction,
+  );
 
   const isCorporate = prev.input.businessType === "corporate";
   const brackets = bracketsFor(prev.input.businessType, rates);
