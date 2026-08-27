@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { EntryForm } from "@/components/ledger/entry-form";
 import { isMonth, monthOf, todayISO } from "@/components/ledger/ledger-view";
-import { AppShell } from "@/components/screens/app-shell";
 import type { EntryInput } from "@/lib/ledger/model";
 import { monthRange } from "@/lib/ledger/range";
 import { useLedger } from "@/state/use-ledger";
@@ -13,8 +12,8 @@ import { useLedger } from "@/state/use-ledger";
 /**
  * T1-a 내역 추가 (기능정의 v2 §3)
  *
- * 탭이 아니라 그 위에 얹히는 화면이라 AppShell 을 직접 그린다
- * (`../../layout.tsx` 는 탭 두 개에만 셸을 씌운다).
+ * 탭이 아니라 그 위에 얹히는 독립 화면이다. 셸(뒤로 · 하단 [저장])은
+ * `EntryForm` 이 직접 그린다 — 하단 고정 버튼이 폼 상태를 그대로 읽어야 한다.
  */
 export default function LedgerNewScreen() {
   // useSearchParams 는 서스펜스 경계를 요구한다 (Next.js CSR bailout)
@@ -51,8 +50,12 @@ function NewEntry() {
   }
 
   return (
-    <AppShell title="내역 추가" back={`/tax/ledger?m=${month}`}>
-      <EntryForm onSubmit={submit} submitting={submitting} defaultDate={defaultDate} />
-    </AppShell>
+    <EntryForm
+      title="내역 추가"
+      backHref={`/tax/ledger?m=${month}`}
+      onSubmit={submit}
+      submitting={submitting}
+      defaultDate={defaultDate}
+    />
   );
 }

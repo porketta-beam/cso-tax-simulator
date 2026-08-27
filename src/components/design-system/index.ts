@@ -19,6 +19,8 @@ export {
   CardFooter,
 } from "@/components/ui/card";
 export { Badge } from "@/components/ui/badge";
+export { Chip, type ChipProps } from "./chip";
+export { Toast, type ToastProps } from "./toast";
 
 // form
 export { MoneyInput, type MoneyInputProps } from "./money-input";

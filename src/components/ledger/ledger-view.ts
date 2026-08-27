@@ -1,4 +1,5 @@
 import {
+  EVIDENCE_TYPES,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
 } from "@/config/tax-rates";
@@ -23,6 +24,11 @@ export const CATEGORY_LABELS = {
 
 export function categoryLabel(entry: Pick<LedgerEntry, "category">): string {
   return CATEGORY_LABELS[entry.category].label;
+}
+
+/** 증빙 라벨. 수입에는 증빙이 없으므로 `null` 이면 표시할 것도 없다 */
+export function evidenceLabel(entry: Pick<LedgerEntry, "evidence">): string | null {
+  return entry.evidence ? EVIDENCE_TYPES[entry.evidence].label : null;
 }
 
 /**

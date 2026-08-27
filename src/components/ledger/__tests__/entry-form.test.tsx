@@ -12,7 +12,13 @@ import { EntryForm } from "../entry-form";
 function mount(over: Partial<React.ComponentProps<typeof EntryForm>> = {}) {
   const onSubmit = vi.fn();
   render(
-    <EntryForm defaultDate="2026-08-26" onSubmit={onSubmit} {...over} />,
+    <EntryForm
+      title="내역 추가"
+      backHref="/tax/ledger?m=2026-08"
+      defaultDate="2026-08-26"
+      onSubmit={onSubmit}
+      {...over}
+    />,
   );
   return { onSubmit };
 }
@@ -20,7 +26,11 @@ function mount(over: Partial<React.ComponentProps<typeof EntryForm>> = {}) {
 const category = () => screen.getByLabelText("항목") as HTMLSelectElement;
 const evidence = () => screen.queryByLabelText("증빙") as HTMLSelectElement | null;
 const amount = () => screen.getByLabelText("금액");
+// 거래처·메모 라벨에는 " · 선택" 이 붙는다 — 이름 앞부분으로 찾는다
+const merchant = () => screen.getByLabelText(/^거래처/);
+const memo = () => screen.getByLabelText(/^메모/);
 const submit = () => screen.getByRole("button", { name: /저장/ });
+const del = () => screen.getByRole("button", { name: "삭제" });
 
 function typeAmount(value: string) {
   fireEvent.change(amount(), { target: { value } });
@@ -100,8 +110,8 @@ describe("EntryForm — 저장", () => {
     typeAmount("330000");
     fireEvent.change(evidence()!, { target: { value: "taxInvoice" } });
     fireEvent.change(category(), { target: { value: "fixed" } });
-    fireEvent.change(screen.getByLabelText("거래처"), { target: { value: " 우리부동산 " } });
-    fireEvent.change(screen.getByLabelText("메모"), { target: { value: "8월 월세" } });
+    fireEvent.change(merchant(), { target: { value: " 우리부동산 " } });
+    fireEvent.change(memo(), { target: { value: "8월 월세" } });
 
     fireEvent.click(submit());
 
@@ -172,13 +182,14 @@ describe("EntryForm — 수정·삭제", () => {
     const onDelete = vi.fn();
     mount({ initial: existing, onDelete });
 
-    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+    fireEvent.click(del());
     expect(onDelete).not.toHaveBeenCalled();
+    // 라벨은 그대로 두고 확인 문구를 아래에 붙인다
+    expect(
+      screen.getByText("정말 삭제할까요? 다시 누르면 삭제됩니다"),
+    ).toBeInTheDocument();
 
-    const confirm = screen.getByRole("button", {
-      name: "정말 삭제할까요? 다시 누르면 삭제됩니다",
-    });
-    fireEvent.click(confirm);
+    fireEvent.click(del());
     await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1));
   });
 

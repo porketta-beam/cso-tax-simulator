@@ -12,10 +12,14 @@ import { ADVISORS } from "@/config/mock-catalog";
 export default function AdvisorScreen() {
   return (
     <AppShell title="세무사 추천" back="/">
-      <p className="text-caption leading-body text-fg-secondary">
-        <span className="font-bold text-fg-strong">CSO를 아는 세무사</span> 를 모았습니다.
-        수수료 구조와 원천징수를 설명하지 않아도 되는 분들입니다.
-      </p>
+      <div>
+        <h2 className="text-h2 font-black tracking-tight text-fg-strong">
+          CSO를 아는 세무사
+        </h2>
+        <p className="mt-1.5 text-caption leading-normal text-fg-secondary">
+          수수료 매출과 불공제 판정을 이미 다뤄 본 세무사만 모았습니다.
+        </p>
+      </div>
 
       {ADVISORS.map((advisor) => (
         <Card key={advisor.name}>
@@ -27,7 +31,7 @@ export default function AdvisorScreen() {
               {advisor.emoji}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <p className="truncate text-body font-bold text-fg-strong">
                   {advisor.name}
                 </p>
@@ -38,23 +42,26 @@ export default function AdvisorScreen() {
                   </Badge>
                 )}
               </div>
-              <p className="mt-[3px] text-caption leading-normal text-fg-secondary">
-                {advisor.specialty} · {advisor.region}
+              {/* 전문 분야가 이름 다음으로 굵다 — 이 목록에서 고르는 기준이다 */}
+              <p className="mt-1 text-caption font-bold text-fg-default">
+                {advisor.specialty}
               </p>
-              <p className="mt-1.5 text-caption leading-normal text-fg-default">
+              <p className="mt-0.5 text-caption text-fg-faint">{advisor.region}</p>
+              <p className="mt-1.5 text-caption leading-normal text-fg-secondary">
                 {advisor.intro}
               </p>
+              <div className="mt-3">
+                <Button variant="outline" size="sm" asChild>
+                  <a href={advisor.href}>상담 요청</a>
+                </Button>
+              </div>
             </div>
           </div>
-
-          <Button variant="outline" size="lg" fullWidth className="mt-3.5" asChild>
-            <a href={advisor.href}>상담 요청</a>
-          </Button>
         </Card>
       ))}
 
-      <p className="px-2 text-center text-micro leading-body text-fg-faint">
-        상담 요청은 이메일로 연결됩니다.
+      <p className="mt-1 text-center text-caption text-fg-faint">
+        상담 요청은 이메일로 연결됩니다
       </p>
     </AppShell>
   );
