@@ -32,6 +32,16 @@ export {
   type SegmentedToggleProps,
 } from "./segmented-toggle";
 
+// settings
+export {
+  SettingGroup,
+  SettingRow,
+  SETTING_ROW,
+  Stepper,
+  Toggle,
+  ReadOnlyValue,
+} from "./settings";
+
 // ledger
 export { LineItemRow, type LineItemRowProps } from "./line-item-row";
 
