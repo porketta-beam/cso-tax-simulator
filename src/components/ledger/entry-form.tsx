@@ -6,10 +6,10 @@ import {
   Badge,
   Button,
   Card,
-  Icon,
   MoneyInput,
   SegmentedToggle,
 } from "@/components/design-system";
+import { AppShell } from "@/components/screens/app-shell";
 import {
   EVIDENCE_TYPES,
   EXPENSE_CATEGORIES,
@@ -32,10 +32,18 @@ import { cn } from "@/lib/utils";
  * 벌이 되면 한쪽만 고쳐지고, 그러면 어느 화면으로 들어왔느냐에 따라 공제
  * 판정이 달라진다.
  *
- * 저장·삭제는 부모가 한다. 폼은 실패 메시지만 자기 자리에 띄운다 — 화면을
- * 떠나기 전에 무엇이 잘못됐는지 입력값 옆에서 보여야 한다.
+ * 폼이 셸까지 그린다. [저장]·[삭제]는 하단 고정 영역(`AppShell` 의 `footer`)에
+ * 있어야 하는데 그 자리는 `<form>` 밖이다 — 버튼은 `form` 속성으로 폼에
+ * 묶는다. 상태를 화면 쪽으로 끌어올려 나누면 "저장할 수 있는가"의 판정이 두
+ * 곳에 생긴다.
+ *
+ * 저장·삭제 자체는 부모가 한다. 폼은 실패 메시지만 자기 자리에 띄운다 —
+ * 화면을 떠나기 전에 무엇이 잘못됐는지 입력값 옆에서 보여야 한다.
  */
 export interface EntryFormProps {
+  title: string;
+  /** 뒤로 갈 목록 주소 — 보고 있던 달을 유지한다 */
+  backHref: string;
   /** 수정일 때의 기존 값. 없으면 추가 */
   initial?: LedgerEntry;
   onSubmit(input: EntryInput): Promise<void> | void;
@@ -50,6 +58,10 @@ const INCOME_OPTIONS = Object.entries(INCOME_CATEGORIES);
 const EXPENSE_OPTIONS = Object.entries(EXPENSE_CATEGORIES);
 const EVIDENCE_OPTIONS = Object.entries(EVIDENCE_TYPES);
 
+/** 하단 [저장] 을 본문의 폼에 묶는다 — 한 화면에 폼은 하나뿐이다 */
+const FORM_ID = "entry-form";
+const DELETE_HINT_ID = "entry-delete-hint";
+
 /**
  * 셀렉트·텍스트 입력의 공통 껍데기.
  *
@@ -59,13 +71,13 @@ const EVIDENCE_OPTIONS = Object.entries(EVIDENCE_TYPES);
  * 32px 높이로 만들어져 있어 탭 타깃 하한 44px 을 깬다.
  */
 const FIELD = cn(
-  "h-tap-min w-full rounded-md border-2 border-line-subtle bg-surface-card px-3",
+  "h-tap-field w-full min-w-0 rounded-md border-2 border-line-subtle bg-surface-card px-3",
   "text-body font-semibold text-fg-strong",
   "transition-colors duration-[var(--dur-fast)] ease-standard",
   "outline-none focus:border-action",
 );
 
-const LABEL = "text-sm font-bold text-fg-strong";
+const LABEL = "text-caption font-bold text-fg-secondary";
 
 /** 저장·삭제 실패를 한 줄로. 원인이 빠지면 사용자가 할 수 있는 일이 없다 */
 function actionErrorMessage(error: unknown, what: string): string {
@@ -74,6 +86,8 @@ function actionErrorMessage(error: unknown, what: string): string {
 }
 
 export function EntryForm({
+  title,
+  backHref,
   initial,
   onSubmit,
   onDelete,
@@ -158,137 +172,176 @@ export function EntryForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
-      <Card className="grid gap-4">
-        <Field label="수입 / 지출">
-          <SegmentedToggle
-            label="수입 / 지출"
-            size="lg"
-            value={kind}
-            onChange={changeKind}
-            options={[
-              { value: "expense", label: "지출" },
-              { value: "income", label: "수입" },
-            ]}
-          />
-        </Field>
+    <AppShell
+      title={title}
+      back={backHref}
+      hideTabs
+      footer={
+        <div className="grid gap-1.5">
+          {error && (
+            <p
+              role="alert"
+              className="px-0.5 text-caption leading-normal font-semibold text-danger-fg"
+            >
+              {error}
+            </p>
+          )}
 
-        <Field id="entry-date" label="날짜">
-          <input
-            id="entry-date"
-            type="date"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={cn(FIELD, "num")}
-          />
-        </Field>
-
-        <Field id="entry-amount" label="금액">
-          <MoneyInput
-            id="entry-amount"
-            value={amount}
-            onChange={setAmount}
-            hint="부가세를 포함한 실제 금액을 넣습니다"
-          />
-        </Field>
-
-        <Field
-          id="entry-category"
-          label="항목"
-          badge={
-            autoForced ? (
-              <Badge tone="amber" title="증빙 때문에 자동으로 불공제로 바꿨습니다">
-                자동
-              </Badge>
-            ) : undefined
-          }
-        >
-          <select
-            id="entry-category"
-            value={category}
-            onChange={(e) => changeCategory(e.target.value as LedgerCategory)}
-            className={FIELD}
+          <Button
+            type="submit"
+            form={FORM_ID}
+            size="xl"
+            fullWidth
+            disabled={!valid || submitting}
           >
-            {(expense ? EXPENSE_OPTIONS : INCOME_OPTIONS).map(([value, { label }]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </Field>
+            {submitting ? "저장 중…" : "저장"}
+          </Button>
 
-        {/* 증빙은 지출만. 수입에는 매입세액이 없어 물어볼 것이 없다 */}
-        {expense && (
-          <Field id="entry-evidence" label="증빙">
+          {onDelete && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="md"
+                fullWidth
+                disabled={submitting}
+                aria-describedby={confirmingDelete ? DELETE_HINT_ID : undefined}
+                onClick={handleDelete}
+                className="text-danger-fg hover:bg-danger-bg"
+              >
+                삭제
+              </Button>
+              {/* 확인은 아래 한 줄로 묻는다. 버튼 라벨이 통째로 바뀌면 방금
+                  무엇을 눌렀는지 잃고, 같은 자리에서 다른 것을 누르게 된다 */}
+              {confirmingDelete && (
+                <p
+                  id={DELETE_HINT_ID}
+                  className="text-center text-caption text-danger-fg"
+                >
+                  정말 삭제할까요? 다시 누르면 삭제됩니다
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      }
+    >
+      {/* display: contents — 폼이 셸 본문 그리드의 간격을 그대로 물려받는다 */}
+      <form id={FORM_ID} onSubmit={handleSubmit} className="contents">
+        <SegmentedToggle
+          label="수입 / 지출"
+          size="md"
+          value={kind}
+          onChange={changeKind}
+          options={[
+            { value: "income", label: "수입" },
+            { value: "expense", label: "지출" },
+          ]}
+        />
+
+        <Card className="grid gap-4">
+          <Field id="entry-date" label="날짜">
+            <input
+              id="entry-date"
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={cn(FIELD, "num")}
+            />
+          </Field>
+
+          <Field id="entry-amount" label="금액">
+            <MoneyInput
+              id="entry-amount"
+              value={amount}
+              onChange={setAmount}
+              hint="VAT 포함 금액을 그대로 넣으세요"
+            />
+          </Field>
+
+          <Field
+            id="entry-category"
+            label="항목"
+            badge={
+              autoForced ? (
+                <Badge tone="amber" title="증빙 때문에 자동으로 불공제로 바꿨습니다">
+                  자동
+                </Badge>
+              ) : undefined
+            }
+          >
             <select
-              id="entry-evidence"
-              value={evidence}
-              onChange={(e) => changeEvidence(e.target.value as EvidenceType)}
+              id="entry-category"
+              value={category}
+              onChange={(e) => changeCategory(e.target.value as LedgerCategory)}
               className={FIELD}
             >
-              {EVIDENCE_OPTIONS.map(([value, { label }]) => (
+              {(expense ? EXPENSE_OPTIONS : INCOME_OPTIONS).map(([value, { label }]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
             </select>
           </Field>
+
+          {/* 증빙은 지출만. 수입에는 매입세액이 없어 물어볼 것이 없다 */}
+          {expense && (
+            <Field id="entry-evidence" label="증빙">
+              <select
+                id="entry-evidence"
+                value={evidence}
+                onChange={(e) => changeEvidence(e.target.value as EvidenceType)}
+                className={FIELD}
+              >
+                {EVIDENCE_OPTIONS.map(([value, { label }]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
+          {autoForced && (
+            <p className="-mt-2.5 text-caption leading-normal text-warn-fg">
+              {EVIDENCE_TYPES[evidence].label}은 적격증빙이 아니어서 항목이 불공제로
+              바뀌었습니다. 직접 다시 고를 수 있습니다.
+            </p>
+          )}
+
+          <Field id="entry-merchant" label="거래처" optional>
+            <input
+              id="entry-merchant"
+              type="text"
+              autoComplete="off"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              placeholder="예: 한국팜텍"
+              className={cn(FIELD, "placeholder:font-normal placeholder:text-fg-faint")}
+            />
+          </Field>
+
+          <Field id="entry-memo" label="메모" optional>
+            <input
+              id="entry-memo"
+              type="text"
+              autoComplete="off"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="예: 8월 정산분"
+              className={cn(FIELD, "placeholder:font-normal placeholder:text-fg-faint")}
+            />
+          </Field>
+        </Card>
+
+        {!valid && (
+          <p className="text-center text-caption text-fg-faint">
+            금액을 넣으면 저장할 수 있습니다.
+          </p>
         )}
-
-        <Field id="entry-merchant" label="거래처">
-          <input
-            id="entry-merchant"
-            type="text"
-            autoComplete="off"
-            value={merchant}
-            onChange={(e) => setMerchant(e.target.value)}
-            placeholder="선택"
-            className={cn(FIELD, "placeholder:font-normal placeholder:text-fg-faint")}
-          />
-        </Field>
-
-        <Field id="entry-memo" label="메모">
-          <input
-            id="entry-memo"
-            type="text"
-            autoComplete="off"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="선택"
-            className={cn(FIELD, "placeholder:font-normal placeholder:text-fg-faint")}
-          />
-        </Field>
-      </Card>
-
-      {error && (
-        <p
-          role="alert"
-          className="px-1 text-caption leading-normal font-bold text-danger-fg"
-        >
-          {error}
-        </p>
-      )}
-
-      <Button type="submit" size="xl" fullWidth disabled={!valid || submitting}>
-        {submitting ? "저장 중…" : "저장"}
-      </Button>
-
-      {onDelete && (
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          fullWidth
-          disabled={submitting}
-          onClick={handleDelete}
-          className="border-danger-line text-danger-fg hover:bg-danger-bg"
-        >
-          <Icon name="trash-2" size={18} />
-          {confirmingDelete ? "정말 삭제할까요? 다시 누르면 삭제됩니다" : "삭제"}
-        </Button>
-      )}
-    </form>
+      </form>
+    </AppShell>
   );
 }
 
@@ -297,23 +350,22 @@ function Field({
   id,
   label,
   badge,
+  optional,
   children,
 }: {
-  id?: string;
+  id: string;
   label: string;
   badge?: React.ReactNode;
+  optional?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="grid gap-1.5">
       <div className="flex items-center gap-1.5">
-        {id ? (
-          <label htmlFor={id} className={LABEL}>
-            {label}
-          </label>
-        ) : (
-          <p className={LABEL}>{label}</p>
-        )}
+        <label htmlFor={id} className={LABEL}>
+          {label}
+          {optional && <span className="font-medium text-fg-faint"> · 선택</span>}
+        </label>
         {badge}
       </div>
       {children}

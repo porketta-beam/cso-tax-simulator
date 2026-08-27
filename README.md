@@ -63,8 +63,11 @@ src/
     ui/                shadcn 프리미티브 — 복사해서 소유하는 코드다.
                        button·card·badge 는 디자인 시스템 어휘로 재정의했으므로
                        `shadcn add` 를 다시 돌리면 덮어써진다
-    design-system/     CTveiw 포팅 컴포넌트 15종 + 배럴(index.ts)
-    screens/           app-shell.tsx  상단 바 + 하단 탭 4개 + ☰ 메뉴 시트
+    design-system/     CTveiw 포팅 컴포넌트 17종 + 배럴(index.ts)
+                       chip.tsx  기간 프리셋·장부 필터 공용 칩
+                       toast.tsx 준비 중 안내 — 라이브러리 없이 setTimeout 하나
+    screens/           app-shell.tsx  상단 바 + 하단 탭 4개(또는 footer 고정 액션)
+                                      + ☰ 메뉴 시트
                        auth-gate.tsx  로그인 가드
   config/
     tax-rates.ts       ⚠️ 모든 세율·요율의 단일 출처 (PRD §4 원칙)

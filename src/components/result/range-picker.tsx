@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/design-system";
+import { Card, Chip } from "@/components/design-system";
 import {
   annualizationFactor,
   annualizationLabel,
@@ -78,22 +78,9 @@ export function RangePicker({
           const range = presetRange(preset.value, today);
           const active = range.from === value.from && range.to === value.to;
           return (
-            <button
-              key={preset.value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onChange(range)}
-              className={cn(
-                "h-8 rounded-pill border px-3 text-caption font-bold",
-                "transition-colors duration-[var(--dur-fast)] ease-standard",
-                "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-                active
-                  ? "border-transparent bg-ink-900 text-fg-on-color"
-                  : "border-line-default bg-surface-card text-fg-default hover:bg-surface-sunken",
-              )}
-            >
+            <Chip key={preset.value} active={active} onClick={() => onChange(range)}>
               {preset.label}
-            </button>
+            </Chip>
           );
         })}
       </div>

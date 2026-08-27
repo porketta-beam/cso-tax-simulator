@@ -50,6 +50,10 @@ export function SectionHead({
  * 좌우 여백만큼 음수 마진을 줘 카드가 화면 끝까지 흘러 나가게 한다(더 있다는
  * 신호). 본문 그리드가 `minmax(0,1fr)` 이라 이 안쪽만 가로로 스크롤되고
  * 페이지 전체는 넘치지 않는다.
+ *
+ * 카드는 정사각 타일 + 이름뿐이다. 설명 한 줄을 넣으면 카드 높이가 이름
+ * 길이에 따라 들쭉날쭉해지고, 어차피 이 자리에서 결정하는 사람은 없다 —
+ * 고르는 일은 쇼핑 화면에서 한다.
  */
 export function ProductRail() {
   return (
@@ -69,14 +73,14 @@ export function ProductRail() {
             FOCUS,
           )}
         >
-          <span aria-hidden="true" className="text-[26px] leading-none">
+          <span
+            aria-hidden="true"
+            className="flex aspect-square w-full items-center justify-center rounded-md bg-surface-sunken text-[34px] leading-none"
+          >
             {product.emoji}
           </span>
-          <span className="mt-3 block text-body font-bold text-fg-strong">
+          <span className="mt-2.5 block text-body leading-snug font-bold text-fg-strong">
             {product.name}
-          </span>
-          <span className="mt-1 block text-caption leading-normal text-fg-secondary">
-            {product.desc}
           </span>
         </Link>
       ))}

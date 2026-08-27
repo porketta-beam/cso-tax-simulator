@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Icon, type IconName } from "@/components/design-system";
@@ -32,6 +32,11 @@ export interface AppShellProps {
   action?: React.ReactNode;
   /** 로그인·가입처럼 앱 밖(로그인 전) 화면에서는 탭과 ☰ 를 함께 감춘다 */
   hideTabs?: boolean;
+  /**
+   * 하단 고정 액션 영역 — 탭 대신 화면 주 액션(내역 폼의 [저장])을 놓는다.
+   * 본문 스크롤과 무관하게 항상 손에 닿아야 하므로 탭 바와 같은 자리에 붙인다.
+   */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -52,7 +57,14 @@ const ICON_BUTTON = cn(
   "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
 );
 
-export function AppShell({ title, back, action, hideTabs, children }: AppShellProps) {
+export function AppShell({
+  title,
+  back,
+  action,
+  hideTabs,
+  footer,
+  children,
+}: AppShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
 
@@ -90,6 +102,18 @@ export function AppShell({ title, back, action, hideTabs, children }: AppShellPr
         {children}
         <div className="h-2" />
       </main>
+
+      {footer && (
+        <div
+          className={cn(
+            "sticky bottom-0 z-20 shrink-0 border-t border-line-subtle bg-surface-card px-gutter pt-3",
+            // 탭 바와 같은 규칙 — 노치 기기에서 홈 인디케이터에 깔리지 않게
+            "pb-[max(12px,env(safe-area-inset-bottom))]",
+          )}
+        >
+          {footer}
+        </div>
+      )}
 
       {!hideTabs && (
         <nav
@@ -139,11 +163,11 @@ export function AppShell({ title, back, action, hideTabs, children }: AppShellPr
 }
 
 /**
- * ☰ 메뉴 시트 (기능정의 v2 §3)
+ * ☰ 메뉴 시트 (기능정의 v2 §3, 2026-08-27 정리)
  *
- * 탭에 넣기엔 자주 쓰지 않지만 어디서든 닿아야 하는 것들 — 계정·설정·
- * 로그아웃·탈퇴 — 를 모은다. 탈퇴는 여기서 처리하지 않고 `/account` 로
- * 보낸다. 두 번 탭 확인 흐름을 두 곳에 복제하면 한쪽만 고쳐질 수 있다.
+ * 두 줄뿐이다 — 어디로 갈 것인가만 묻는다. 로그아웃·탈퇴는 여기서 내려가
+ * `/account` 안에 산다. 계정을 끝내는 조작이 이동 메뉴와 같은 무게로 나란히
+ * 놓이면 오조작을 부르고, 두 번 탭 확인을 두 곳에 복제하면 한쪽만 고쳐진다.
  */
 export function MenuSheet({
   open,
@@ -152,14 +176,7 @@ export function MenuSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const router = useRouter();
-  const { user, signOut } = useAuth();
-
-  async function onSignOut() {
-    await signOut();
-    onOpenChange(false);
-    router.replace("/login");
-  }
+  const { user } = useAuth();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -178,22 +195,20 @@ export function MenuSheet({
         </SheetHeader>
 
         <div className="grid pb-2">
-          <MenuItem href="/account" icon="user" label="내 정보" onNavigate={onOpenChange} />
+          <MenuItem
+            href="/account"
+            icon="user"
+            label="내 정보"
+            desc="계정 · 계산 설정 · 로그아웃"
+            onNavigate={onOpenChange}
+          />
           {/* 계산 설정(/tax/settings)이 아니라 앱 설정이다. 계산에 쓰는 값은
               결과 화면 ⚙ 와 내 정보에서 들어간다 */}
           <MenuItem
             href="/settings"
             icon="settings"
             label="앱 설정"
-            onNavigate={onOpenChange}
-          />
-          <MenuItem icon="log-out" label="로그아웃" onClick={onSignOut} />
-          {/* 탈퇴 확인(두 번 탭)은 /account 한 곳에만 있다 */}
-          <MenuItem
-            href="/account"
-            icon="trash-2"
-            label="탈퇴"
-            tone="danger"
+            desc="비밀번호 · 알림 · 데이터"
             onNavigate={onOpenChange}
           />
         </div>
@@ -206,38 +221,32 @@ function MenuItem({
   href,
   icon,
   label,
-  tone,
-  onClick,
+  desc,
   onNavigate,
 }: {
-  href?: string;
+  href: string;
   icon: IconName;
   label: string;
-  tone?: "danger";
-  onClick?: () => void;
-  onNavigate?: (open: boolean) => void;
+  desc: string;
+  onNavigate: (open: boolean) => void;
 }) {
-  const className = cn(
-    "flex h-tap-comfort items-center gap-3 px-gutter text-body font-bold",
-    "hover:bg-surface-sunken",
-    "outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-    tone === "danger" ? "text-danger-fg" : "text-fg-strong",
-  );
-
-  if (href) {
-    return (
-      <Link href={href} className={className} onClick={() => onNavigate?.(false)}>
-        <Icon name={icon} size={19} />
-        {label}
-      </Link>
-    );
-  }
-
   return (
-    <button type="button" className={cn(className, "text-left")} onClick={onClick}>
-      <Icon name={icon} size={19} />
-      {label}
-    </button>
+    <Link
+      href={href}
+      onClick={() => onNavigate(false)}
+      className={cn(
+        "flex items-center gap-3 px-gutter py-3",
+        "hover:bg-surface-sunken",
+        "outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+      )}
+    >
+      <Icon name={icon} size={19} className="text-fg-default" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-body font-bold text-fg-strong">{label}</span>
+        <span className="block text-caption leading-snug text-fg-secondary">{desc}</span>
+      </span>
+      <Icon name="chevron-right" size={17} className="text-fg-faint" />
+    </Link>
   );
 }
 
